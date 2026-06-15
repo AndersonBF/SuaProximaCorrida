@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RaceStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  saved        SavedRace[]
+}
+
+model SavedRace {
+  id        String   @id @default(cuid())
+  userId    String
+  raceId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  race      Race     @relation(fields: [raceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, raceId])
+  @@index([userId])
+}
+
+model Race {
+  id          String   @id @default(cuid())
+  // Identificação
+  name        String
+  slug        String   @unique
+  description String?
+  imageUrl    String?
+
+  // Quando
+  date    DateTime // data/largada
+  endDate DateTime? // para eventos de mais de um dia
+
+  // Onde
+  state    String // UF, ex: "SP"
+  city     String
+  location String? // local de largada / endereço
+
+  latitude  Float? // coordenadas da cidade (para "perto de mim")
+  longitude Float?
+
+  // Detalhes da prova
+  distances String[] // ex: ["5km", "10km", "21km"]
+  priceFrom Float? // valor a partir de (R$)
+  priceTo   Float? // valor mais caro (R$)
+  organizer String?
+
+  // Origem e link
+  registrationUrl String // link de inscrição no site original
+  source          String  @default("Manual") // ex: "Ticket Sports", "Sympla", "Manual"
+  sourceUrl       String? // página de origem (de onde veio o dado)
+  externalId      String? // id da corrida no site de origem (para dedupe no scraping)
+
+  // Controle
+  status   RaceStatus @default(PUBLISHED)
+  featured Boolean    @default(false)
+
+  clicks Int @default(0) // cliques no botão de inscrição (saída para o site oficial)
+
+  savedBy SavedRace[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([source, externalId])
+  @@index([state, city])
+  @@index([date])
+  @@index([status])
+}
