@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Corra Melhor 🏃
 
 Agregador de corridas de rua por região. Reúne provas cadastradas em diversos
@@ -100,3 +101,6 @@ atualizado — ex: diariamente.
 - Geolocalização ("corridas perto de mim") com lat/long
 - Página por cidade (SEO)
 - Newsletter / alertas de novas corridas
+=======
+# SuaProximaCorrida
+>>>>>>> 5afd86c7261cc96f7d45edb53e56d29d161ae577
