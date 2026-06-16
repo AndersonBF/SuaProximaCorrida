@@ -3,7 +3,7 @@ import { Bookmark, Navigation } from "lucide-react";
 import { getCurrentUser } from "@/lib/currentUser";
 import { logoutUser } from "@/app/conta/actions";
 
-const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Corra Melhor";
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Sua Próxima Corrida";
 
 export async function Header() {
   const user = await getCurrentUser();
@@ -14,10 +14,9 @@ export async function Header() {
       <div className="container-page flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="text-[18px] font-bold tracking-tight">
-          <span className="text-neutral-50">Corra</span>
+          <span className="text-neutral-50">Sua </span>
           <span className="bg-gradient-to-r from-accent to-amber-300 bg-clip-text text-transparent">
-            {" "}
-            Melhor
+            Próxima Corrida
           </span>
         </Link>
 

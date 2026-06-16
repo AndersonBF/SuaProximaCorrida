@@ -71,11 +71,14 @@ type DedupeRace = {
   distances: string[];
 };
 
+const RACE_STOPWORDS = /\b(corrida|corridas|run|race|prova|etapa)\b/g;
+
 function fingerprint(r: DedupeRace): string {
   const n = r.name
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
+    .replace(RACE_STOPWORDS, "")
     .replace(/[^a-z0-9]/g, "");
   return `${n}|${new Date(r.date).toISOString().slice(0, 10)}`;
 }

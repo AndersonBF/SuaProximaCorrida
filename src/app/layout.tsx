@@ -3,7 +3,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { CursorGlow } from "@/components/CursorGlow";
 
-const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Corra Melhor";
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Sua Próxima Corrida";
 
 export const metadata: Metadata = {
   title: {

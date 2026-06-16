@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
 const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM } = process.env;
-const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Corra Melhor";
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Sua Próxima Corrida";
 
 let realTransport: nodemailer.Transporter | null = null;
 let etherealPromise: Promise<nodemailer.Transporter> | null = null;
@@ -84,7 +84,7 @@ export function welcomeEmail(name: string) {
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;background:#121214;border-radius:16px;overflow:hidden;border:1px solid #26262c">
     <div style="padding:28px 28px 8px">
       <h1 style="margin:0;font-size:22px;color:#fafafa">
-        Corra <span style="color:#f97316">Melhor</span>
+        Sua <span style="color:#f97316">Próxima Corrida</span>
       </h1>
     </div>
     <div style="padding:8px 28px 28px;color:#d4d4d4;line-height:1.6;font-size:15px">

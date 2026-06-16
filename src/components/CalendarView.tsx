@@ -12,11 +12,14 @@ export function CalendarView({
   loggedIn: boolean;
   savedSet: Set<string>;
 }) {
-  // agrupa por mês/ano preservando a ordem cronológica
+  // agrupa por mês/ano em ordem cronológica (independente de featured)
+  const sorted = [...items].sort(
+    (a, b) => new Date(a.race.date).getTime() - new Date(b.race.date).getTime()
+  );
   const groups: { key: string; label: string; items: typeof items }[] = [];
   const byKey = new Map<string, (typeof groups)[number]>();
 
-  for (const it of items) {
+  for (const it of sorted) {
     const d = new Date(it.race.date);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     let g = byKey.get(key);
