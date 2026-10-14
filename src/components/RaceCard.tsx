@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, MapPin, Navigation, Clock } from "lucide-react";
+import { CalendarDays, MapPin, Navigation, Clock, Users } from "lucide-react";
 import type { Race } from "@prisma/client";
 import { formatDate, formatPriceShort } from "@/lib/format";
 import { formatDistance } from "@/lib/geo";
@@ -92,6 +92,18 @@ export function RaceCard({
             <MapPin size={13} />
             {race.city}
           </span>
+          {race.savesCount > 0 && (
+            <>
+              <span className="text-ink-700">·</span>
+              <span
+                className="flex items-center gap-1"
+                title={`${race.savesCount} pessoa${race.savesCount === 1 ? "" : "s"} salvaram`}
+              >
+                <Users size={12} />
+                {race.savesCount}
+              </span>
+            </>
+          )}
           {distanceKm !== undefined && (
             <>
               <span className="text-ink-700">·</span>

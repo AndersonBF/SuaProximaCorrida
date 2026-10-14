@@ -6,11 +6,12 @@ import { getUserId } from "@/lib/auth";
 
 /**
  * Alterna o "salvar" de uma corrida para o usuário logado.
- * Retorna { saved } com o novo estado, ou null se não estiver logado.
+ * Retorna { saved, count } com o novo estado e o total de pessoas que salvaram,
+ * ou null se não estiver logado.
  */
 export async function toggleSave(
   raceId: string
-): Promise<{ saved: boolean } | null> {
+): Promise<{ saved: boolean; count: number } | null> {
   const userId = getUserId();
   if (!userId) return null;
 
@@ -18,13 +19,26 @@ export async function toggleSave(
     where: { userId_raceId: { userId, raceId } },
   });
 
-  if (existing) {
-    await prisma.savedRace.delete({ where: { id: existing.id } });
-    revalidatePath("/minhas-corridas");
-    return { saved: false };
-  }
+  const [, race] = await prisma.$transaction(
+    existing
+      ? [
+          prisma.savedRace.delete({ where: { id: existing.id } }),
+          prisma.race.update({
+            where: { id: raceId },
+            data: { savesCount: { decrement: 1 } },
+            select: { savesCount: true },
+          }),
+        ]
+      : [
+          prisma.savedRace.create({ data: { userId, raceId } }),
+          prisma.race.update({
+            where: { id: raceId },
+            data: { savesCount: { increment: 1 } },
+            select: { savesCount: true },
+          }),
+        ]
+  );
 
-  await prisma.savedRace.create({ data: { userId, raceId } });
   revalidatePath("/minhas-corridas");
-  return { saved: true };
+  return { saved: !existing, count: Math.max(0, race.savesCount) };
 }

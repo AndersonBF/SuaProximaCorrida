@@ -10,10 +10,13 @@ interface Props {
   initialSaved: boolean;
   loggedIn: boolean;
   variant?: "icon" | "full";
+  /** total de pessoas que salvaram (mostrado na variante "full") */
+  initialCount?: number;
 }
 
-export function SaveButton({ raceId, initialSaved, loggedIn, variant = "icon" }: Props) {
+export function SaveButton({ raceId, initialSaved, loggedIn, variant = "icon", initialCount }: Props) {
   const [saved, setSaved] = useState(initialSaved);
+  const [count, setCount] = useState(initialCount);
   const [pending, start] = useTransition();
 
   // Não logado: vira link para entrar (sem quebrar navegação do card)
@@ -44,7 +47,10 @@ export function SaveButton({ raceId, initialSaved, loggedIn, variant = "icon" }:
     e.stopPropagation();
     start(async () => {
       const r = await toggleSave(raceId);
-      if (r) setSaved(r.saved);
+      if (r) {
+        setSaved(r.saved);
+        setCount(r.count);
+      }
     });
   }
 
@@ -61,6 +67,9 @@ export function SaveButton({ raceId, initialSaved, loggedIn, variant = "icon" }:
       >
         {saved ? <Check size={16} /> : <Bookmark size={16} />}
         {saved ? "Salva — vou participar" : "Salvar corrida"}
+        {count !== undefined && count > 0 && (
+          <span className="text-xs text-neutral-500">· {count}</span>
+        )}
       </button>
     );
   }

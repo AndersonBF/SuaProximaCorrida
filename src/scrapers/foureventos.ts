@@ -4,7 +4,8 @@ import type { Scraper, ScrapedRace } from "./types";
  * Scraper do foureventos.com (agenda em /resultados). Cada card traz nome,
  * data, local (cidade/UF) e imagem; o link aponta para a página do evento no
  * próprio foureventos. A página mistura provas futuras e passadas — filtramos
- * pela UF alvo e por data >= hoje.
+ * pela UF alvo; as passadas entram com `resultsUrl` (a própria página do evento
+ * no foureventos traz os resultados).
  */
 const HOST = "https://foureventos.com";
 const UA =
@@ -75,7 +76,8 @@ export const foureventosScraper: Scraper = {
       if (!name || !dateRaw || !locRaw) continue;
 
       const date = parseDatePt(decode(dateRaw));
-      if (!date || date < today) continue; // só futuras
+      if (!date) continue;
+      const isPast = date < today; // provas passadas viram "resultados"
 
       // "Local: [VENUE - ]CIDADE/UF"
       const loc = decode(locRaw).replace(/^local:\s*/i, "");
@@ -101,12 +103,13 @@ export const foureventosScraper: Scraper = {
         distances: [],
         imageUrl: imgRaw ? (imgRaw.startsWith("http") ? imgRaw : HOST + imgRaw) : undefined,
         registrationUrl: url,
+        resultsUrl: isPast ? url : undefined,
         sourceUrl: url,
         source: "Four Eventos",
       });
     }
 
-    console.log(`  [foureventos] ${out.length} corrida(s) futuras em ${uf}`);
+    console.log(`  [foureventos] ${out.length} corrida(s) em ${uf}`);
     return out;
   },
 };

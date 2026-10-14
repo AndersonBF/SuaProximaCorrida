@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bookmark, Navigation } from "lucide-react";
+import { Bookmark, Navigation, Trophy, UserCircle, Users } from "lucide-react";
 import { getCurrentUser } from "@/lib/currentUser";
 import { logoutUser } from "@/app/conta/actions";
 
@@ -26,6 +26,20 @@ export async function Header() {
             Corridas
           </Link>
           <Link
+            href="/resultados"
+            className="flex items-center gap-1.5 transition hover:text-neutral-100"
+          >
+            <Trophy size={14} />
+            <span className="hidden sm:inline">Resultados</span>
+          </Link>
+          <Link
+            href="/assessorias"
+            className="hidden items-center gap-1.5 transition hover:text-neutral-100 sm:flex"
+          >
+            <Users size={14} />
+            Assessorias
+          </Link>
+          <Link
             href="/perto"
             className="flex items-center gap-1.5 transition hover:text-neutral-100"
           >
@@ -42,9 +56,15 @@ export async function Header() {
                 <Bookmark size={15} />
                 <span className="hidden sm:inline">Minhas corridas</span>
               </Link>
-              <span className="hidden text-neutral-500 md:inline">
-                Olá, <span className="text-neutral-200">{firstName}</span>
-              </span>
+              <Link
+                href="/conta"
+                className="flex items-center gap-1.5 text-neutral-500 transition hover:text-neutral-100"
+              >
+                <UserCircle size={15} />
+                <span className="hidden md:inline">
+                  Olá, <span className="text-neutral-200">{firstName}</span>
+                </span>
+              </Link>
               <form action={logoutUser}>
                 <button className="transition hover:text-neutral-100">Sair</button>
               </form>

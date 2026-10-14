@@ -17,6 +17,22 @@ export default function AdminLayout({
           <h1 className="text-lg font-semibold tracking-tight text-neutral-100">
             Painel Admin
           </h1>
+          {authed && (
+            <>
+              <Link
+                href="/admin"
+                className="text-sm text-neutral-500 transition hover:text-neutral-200"
+              >
+                Corridas
+              </Link>
+              <Link
+                href="/admin/assessorias"
+                className="text-sm text-neutral-500 transition hover:text-neutral-200"
+              >
+                Assessorias
+              </Link>
+            </>
+          )}
           <Link
             href="/"
             className="text-sm text-neutral-500 transition hover:text-neutral-200"

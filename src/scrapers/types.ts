@@ -20,6 +20,8 @@ export interface ScrapedRace {
   organizer?: string;
   /** Link de inscrição no site oficial. */
   registrationUrl: string;
+  /** Link dos resultados oficiais (corridas já realizadas). */
+  resultsUrl?: string;
   /** Página de onde o dado foi extraído. */
   sourceUrl?: string;
   /**

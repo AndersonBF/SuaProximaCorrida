@@ -102,7 +102,10 @@ export function dedupeRaces<T extends DedupeRace>(races: T[]): T[] {
 }
 
 export async function getRaceBySlug(slug: string) {
-  return prisma.race.findUnique({ where: { slug } });
+  return prisma.race.findUnique({
+    where: { slug },
+    include: { photos: { orderBy: { createdAt: "asc" } } },
+  });
 }
 
 export async function getRaceById(id: string) {

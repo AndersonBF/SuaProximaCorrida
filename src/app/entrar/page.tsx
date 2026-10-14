@@ -38,6 +38,12 @@ export default function EntrarPage() {
             Senha
             <input type="password" name="password" required className="field" placeholder="••••••••" />
           </label>
+          <Link
+            href="/esqueci-senha"
+            className="-mt-2 w-fit text-xs text-neutral-500 transition hover:text-accent"
+          >
+            Esqueci minha senha
+          </Link>
           {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
           <SubmitButton />
         </form>

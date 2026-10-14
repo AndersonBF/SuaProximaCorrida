@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "scrape": "tsx scripts/scrape.ts && tsx scripts/geocode.ts",
+    "scrape": "tsx scripts/scrape.ts && tsx scripts/geocode.ts && tsx scripts/photos.ts",
+    "photos": "tsx scripts/photos.ts",
     "geocode": "tsx scripts/geocode.ts",
     "email:test": "tsx scripts/email-test.ts",
     "postinstall": "prisma generate"

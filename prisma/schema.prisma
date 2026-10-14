@@ -20,6 +20,7 @@ model User {
   passwordHash String
   createdAt    DateTime    @default(now())
   saved        SavedRace[]
+  resetTokens  PasswordResetToken[]
 }
 
 model SavedRace {
@@ -65,14 +66,19 @@ model Race {
   source          String  @default("Manual") // ex: "Ticket Sports", "Sympla", "Manual"
   sourceUrl       String? // página de origem (de onde veio o dado)
   externalId      String? // id da corrida no site de origem (para dedupe no scraping)
+  resultsUrl      String? // link dos resultados oficiais (corridas já realizadas)
+  photosUrl       String? // álbum de fotos da corrida (ex: Fotop)
+  photosCheckedAt DateTime? // última busca automática de fotos
 
   // Controle
   status   RaceStatus @default(PUBLISHED)
   featured Boolean    @default(false)
 
   clicks Int @default(0) // cliques no botão de inscrição (saída para o site oficial)
+  savesCount Int @default(0) // quantos usuários salvaram (denormalizado)
 
   savedBy SavedRace[]
+  photos  RacePhoto[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -81,4 +87,58 @@ model Race {
   @@index([state, city])
   @@index([date])
   @@index([status])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum AssessoriaStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Assessoria / grupo de corrida de uma cidade (diretório próprio).
+model Assessoria {
+  id           String           @id @default(cuid())
+  name         String
+  slug         String           @unique
+  city         String
+  state        String
+  description  String?
+  trainingInfo String? // dias, horários e locais de treino
+  instagram    String? // URL completa
+  whatsapp     String? // só dígitos, com DDI
+  website      String?
+  logoUrl      String?
+  contactEmail String? // privado: só o admin vê
+  status       AssessoriaStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+
+  @@index([state, city])
+  @@index([status])
+}
+
+/// Álbum de fotos de uma corrida em uma plataforma (Fotop, Fotto, Banlek...).
+/// Uma corrida pode ter vários (outros fotógrafos/plataformas).
+model RacePhoto {
+  id        String   @id @default(cuid())
+  raceId    String
+  provider  String // ex: "Fotop", "Foco Radical"
+  url       String
+  title     String? // título do álbum na plataforma
+  createdAt DateTime @default(now())
+  race      Race     @relation(fields: [raceId], references: [id], onDelete: Cascade)
+
+  @@unique([raceId, url])
+  @@index([raceId])
 }

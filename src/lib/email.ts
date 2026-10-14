@@ -77,6 +77,36 @@ export async function sendEmail(opts: {
   }
 }
 
+/** E-mail com o link para redefinir a senha. */
+export function resetPasswordEmail(name: string, link: string) {
+  const first = name.split(" ")[0] || "";
+  const html = `
+  <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;background:#121214;border-radius:16px;overflow:hidden;border:1px solid #26262c">
+    <div style="padding:28px 28px 8px">
+      <h1 style="margin:0;font-size:22px;color:#fafafa">
+        Sua <span style="color:#f97316">Próxima Corrida</span>
+      </h1>
+    </div>
+    <div style="padding:8px 28px 28px;color:#d4d4d4;line-height:1.6;font-size:15px">
+      <p>Olá${first ? `, <strong style="color:#fff">${first}</strong>` : ""}!</p>
+      <p>Recebemos um pedido para redefinir a senha da sua conta no <strong>${siteName}</strong>.
+      O link abaixo vale por <strong>1 hora</strong>.</p>
+      <a href="${link}" style="display:inline-block;margin-top:12px;background:#f97316;color:#0a0a0b;
+        text-decoration:none;font-weight:600;padding:11px 20px;border-radius:10px">
+        Redefinir minha senha
+      </a>
+      <p style="margin-top:24px;color:#8a8a8a;font-size:13px">
+        Se você não pediu isso, ignore este e-mail: sua senha continua a mesma.
+      </p>
+    </div>
+  </div>`;
+  return {
+    subject: `Redefinir sua senha - ${siteName}`,
+    html,
+    text: `Para redefinir sua senha acesse (vale por 1 hora): ${link}\nSe você não pediu isso, ignore este e-mail.`,
+  };
+}
+
 /** Conteúdo do e-mail de boas-vindas enviado no cadastro. */
 export function welcomeEmail(name: string) {
   const first = name.split(" ")[0] || name;

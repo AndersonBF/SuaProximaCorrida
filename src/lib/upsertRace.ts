@@ -52,6 +52,29 @@ export async function upsertScrapedRace(defaultSource: string, r: ScrapedRace) {
     where: { source_externalId: { source, externalId: r.externalId } },
   });
 
+  // Resultado de prova que já temos (mesma página de origem): só anexa o link.
+  if (!existing && r.resultsUrl && r.sourceUrl) {
+    // o corridasbr usa o mesmo id de evento no calendário e nos resultados
+    const known = await prisma.race.findFirst({
+      where: {
+        OR: [
+          { sourceUrl: r.sourceUrl },
+          {
+            externalId: r.externalId,
+            sourceUrl: { contains: "corridasbr.com.br" },
+          },
+        ],
+      },
+    });
+    if (known) {
+      await prisma.race.update({
+        where: { id: known.id },
+        data: { resultsUrl: r.resultsUrl },
+      });
+      return "updated" as const;
+    }
+  }
+
   // Dedupe entre fontes: a mesma prova pode vir do corridasbr (que aponta para
   // a plataforma) e da própria plataforma. Compara pelo link de inscrição.
   if (!existing) {
@@ -85,6 +108,7 @@ export async function upsertScrapedRace(defaultSource: string, r: ScrapedRace) {
     source,
     sourceUrl: r.sourceUrl ?? null,
     externalId: r.externalId,
+    ...(r.resultsUrl ? { resultsUrl: r.resultsUrl } : {}),
   };
 
   if (existing) {

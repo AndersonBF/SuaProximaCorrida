@@ -8,10 +8,15 @@ import {
   Tag,
   User,
   ExternalLink,
+  Trophy,
+  Camera,
 } from "lucide-react";
 import { getRaceBySlug } from "@/lib/races";
 import { getCurrentUser, getSavedRaceIds } from "@/lib/currentUser";
 import { SaveButton } from "@/components/SaveButton";
+import { AssessoriaCard } from "@/components/AssessoriaCard";
+import { searchLinks } from "@/lib/photos";
+import { prisma } from "@/lib/prisma";
 import { formatDateLong, formatPriceRange } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +47,20 @@ export default async function RaceDetailPage({
     getCurrentUser(),
     getSavedRaceIds(),
   ]);
+  const assessorias = await prisma.assessoria.findMany({
+    where: {
+      status: "APPROVED",
+      state: race.state,
+      city: { equals: race.city, mode: "insensitive" },
+    },
+    orderBy: { name: "asc" },
+    take: 6,
+  });
+
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isPast = new Date(race.endDate ?? race.date) < today;
 
   const info = [
     { icon: CalendarDays, label: "Data", value: formatDateLong(race.date) },
@@ -126,20 +145,86 @@ export default async function RaceDetailPage({
               ))}
             </dl>
 
-            <a
-              href={`/ir/${race.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-ink-950 transition hover:bg-accent-soft"
-            >
-              Inscrever-se no site oficial <ExternalLink size={15} />
-            </a>
+            {isPast ? (
+              race.resultsUrl ? (
+                <a
+                  href={race.resultsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-ink-950 transition hover:bg-accent-soft"
+                >
+                  <Trophy size={15} /> Ver resultados <ExternalLink size={15} />
+                </a>
+              ) : (
+                <p className="rounded-lg border border-ink-800 px-4 py-2.5 text-center text-sm text-neutral-500">
+                  Corrida realizada · resultados ainda não disponíveis
+                </p>
+              )
+            ) : (
+              <a
+                href={`/ir/${race.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-ink-950 transition hover:bg-accent-soft"
+              >
+                Inscrever-se no site oficial <ExternalLink size={15} />
+              </a>
+            )}
+            {isPast && (
+              <div className="flex flex-col gap-2">
+                {race.photos.length > 0 ? (
+                  <>
+                    <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-neutral-500">
+                      <Camera size={13} className="text-accent" /> Encontre suas fotos
+                    </p>
+                    {race.photos.map((p) => (
+                      <a
+                        key={p.id}
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="inline-flex items-center justify-between gap-2 rounded-lg border border-accent/40 px-3.5 py-2 text-sm font-medium text-accent transition hover:bg-accent/10"
+                      >
+                        <span className="truncate">{p.provider}</span>
+                        <ExternalLink size={14} className="shrink-0" />
+                      </a>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-neutral-500">
+                      <Camera size={13} /> Procurar fotos
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {searchLinks(race.name).map((l) => (
+                        <a
+                          key={l.provider}
+                          href={l.url}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="rounded-md border border-ink-700 px-2.5 py-1 text-xs text-neutral-400 transition hover:border-accent/50 hover:text-white"
+                        >
+                          {l.provider}
+                        </a>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             <SaveButton
               raceId={race.id}
               initialSaved={savedIds.has(race.id)}
               loggedIn={!!user}
               variant="full"
+              initialCount={race.savesCount}
             />
+            {race.savesCount > 0 && (
+              <p className="text-center text-xs text-neutral-500">
+                {race.savesCount} pessoa{race.savesCount === 1 ? "" : "s"}{" "}
+                {race.savesCount === 1 ? "salvou" : "salvaram"} esta corrida
+              </p>
+            )}
             {race.sourceUrl && (
               <a
                 href={race.sourceUrl}
@@ -153,6 +238,40 @@ export default async function RaceDetailPage({
           </aside>
         </div>
       </div>
+
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold text-neutral-100">
+              Treine em {race.city}
+            </h2>
+            <p className="text-sm text-neutral-500">
+              Assessorias e grupos de corrida da cidade.
+            </p>
+          </div>
+          <Link
+            href={`/assessorias?cidade=${encodeURIComponent(race.city)}`}
+            className="text-sm text-accent transition hover:text-accent-soft"
+          >
+            Ver todas →
+          </Link>
+        </div>
+        {assessorias.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {assessorias.map((a) => (
+              <AssessoriaCard key={a.id} assessoria={a} compact />
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-xl border border-dashed border-ink-700 p-6 text-center text-sm text-neutral-500">
+            Ainda não temos assessorias cadastradas em {race.city}.{" "}
+            <Link href="/assessorias/cadastrar" className="text-accent">
+              Cadastre a sua
+            </Link>
+            .
+          </p>
+        )}
+      </section>
     </div>
   );
 }
