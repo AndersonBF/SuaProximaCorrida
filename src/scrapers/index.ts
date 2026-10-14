@@ -1,6 +1,7 @@
 import type { Scraper } from "./types";
 import { corridasbrScraper } from "./corridasbr";
 import { foureventosScraper } from "./foureventos";
+import { ticketSportsScraper } from "./ticketsports";
 
 /**
  * Registro de scrapers ativos. Adicione novos sites aqui.
@@ -10,5 +11,6 @@ import { foureventosScraper } from "./foureventos";
 export const scrapers: Scraper[] = [
   corridasbrScraper,
   foureventosScraper,
+  ticketSportsScraper,
   // symplaScraper,
 ];

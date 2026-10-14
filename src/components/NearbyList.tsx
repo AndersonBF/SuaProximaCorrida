@@ -61,19 +61,31 @@ export function NearbyList({
 
   if (status === "denied" || status === "unsupported") {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-ink-700 p-12 text-center">
-        <Navigation className="text-neutral-600" />
-        <p className="max-w-sm text-sm text-neutral-400">
-          {status === "unsupported"
-            ? "Seu navegador não suporta geolocalização."
-            : "Não consegui acessar sua localização. Permita o acesso no navegador para ver as corridas mais próximas."}
-        </p>
-        <button
-          onClick={locate}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink-950 transition hover:bg-accent-soft"
-        >
-          Tentar de novo
-        </button>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-ink-700 p-8 text-center">
+          <Navigation className="text-neutral-600" />
+          <p className="max-w-sm text-sm text-neutral-400">
+            {status === "unsupported"
+              ? "Seu navegador não suporta geolocalização."
+              : "Não consegui acessar sua localização. Permita o acesso no navegador para ordenar pela distância. Enquanto isso, mostramos as próximas corridas por data."}
+          </p>
+          <button
+            onClick={locate}
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink-950 transition hover:bg-accent-soft"
+          >
+            Tentar de novo
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {races.map((race) => (
+            <RaceCard
+              key={race.id}
+              race={race}
+              loggedIn={loggedIn}
+              saved={savedSet.has(race.id)}
+            />
+          ))}
+        </div>
       </div>
     );
   }
