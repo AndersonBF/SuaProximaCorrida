@@ -3,11 +3,37 @@ import { redirect } from "next/navigation";
 import crypto from "crypto";
 
 const COOKIE_NAME = "corra_admin";
-const SECRET = process.env.ADMIN_SESSION_SECRET || "dev-secret-troque-isto";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 dias
+const isProd = process.env.NODE_ENV === "production";
+
+/**
+ * Lê um segredo do ambiente. Em produção não há valor padrão: sem a variável
+ * (ou com algo curto demais), o login do admin fica bloqueado em vez de
+ * aceitar uma senha conhecida como "admin123".
+ */
+function requiredSecret(name: string, devFallback: string): string | null {
+  const value = process.env[name];
+  if (value && value.length >= 16) return value;
+  if (!isProd) return value || devFallback;
+  console.error(`[auth] ${name} ausente ou com menos de 16 caracteres — login do admin desativado.`);
+  return null;
+}
+
+function sessionSecret(): string {
+  // sem segredo em produção: chave aleatória por processo, nenhum cookie vale
+  return requiredSecret("ADMIN_SESSION_SECRET", "dev-secret-troque-isto") ?? RANDOM_KEY;
+}
+const RANDOM_KEY = crypto.randomBytes(32).toString("hex");
 
 function sign(value: string): string {
-  return crypto.createHmac("sha256", SECRET).update(value).digest("hex");
+  return crypto.createHmac("sha256", sessionSecret()).update(value).digest("hex");
+}
+
+/** Compara strings em tempo constante (não vaza tamanho nem conteúdo). */
+function safeEqual(a: string, b: string): boolean {
+  const ha = crypto.createHash("sha256").update(a).digest();
+  const hb = crypto.createHash("sha256").update(b).digest();
+  return crypto.timingSafeEqual(ha, hb);
 }
 
 /** Cria um token assinado (valor.assinatura) válido por MAX_AGE. */
@@ -24,19 +50,43 @@ export function verifySessionToken(token?: string | null): boolean {
   if (idx === -1) return false;
   const payload = token.slice(0, idx);
   const signature = token.slice(idx + 1);
-  if (sign(payload) !== signature) return false;
+  if (!safeEqual(sign(payload), signature)) return false;
   const [, expiresStr] = payload.split(":");
   const expires = Number(expiresStr);
   return Number.isFinite(expires) && expires > Date.now();
 }
 
 export function checkPassword(password: string): boolean {
-  const expected = process.env.ADMIN_PASSWORD || "admin123";
-  // comparação em tempo constante
-  const a = Buffer.from(password);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(a, b);
+  const expected = requiredSecret("ADMIN_PASSWORD", "admin123");
+  if (!expected || !password) return false;
+  return safeEqual(password, expected);
+}
+
+/* Limite de tentativas de login do admin (por IP, em memória). */
+const MAX_ATTEMPTS = 5;
+const LOCK_MS = 15 * 60 * 1000; // 15 min
+const attempts = new Map<string, { count: number; first: number }>();
+
+/** Minutos restantes de bloqueio para o IP, ou 0 se pode tentar. */
+export function loginLockedFor(ip: string): number {
+  const a = attempts.get(ip);
+  if (!a) return 0;
+  const left = a.first + LOCK_MS - Date.now();
+  if (left <= 0) {
+    attempts.delete(ip);
+    return 0;
+  }
+  return a.count >= MAX_ATTEMPTS ? Math.ceil(left / 60000) : 0;
+}
+
+export function registerLoginFailure(ip: string) {
+  const a = attempts.get(ip);
+  if (!a || a.first + LOCK_MS < Date.now()) attempts.set(ip, { count: 1, first: Date.now() });
+  else a.count++;
+}
+
+export function clearLoginFailures(ip: string) {
+  attempts.delete(ip);
 }
 
 export function setSessionCookie() {
@@ -109,7 +159,7 @@ export function getUserId(): string | null {
   const idx = token.lastIndexOf(".");
   if (idx === -1) return null;
   const payload = token.slice(0, idx);
-  if (sign(payload) !== token.slice(idx + 1)) return null;
+  if (!safeEqual(sign(payload), token.slice(idx + 1))) return null;
   const [userId, expiresStr] = payload.split(":");
   if (!(Number(expiresStr) > Date.now())) return null;
   return userId || null;

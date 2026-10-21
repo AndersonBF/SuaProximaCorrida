@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { raceSchema } from "@/lib/validators";
 import { slugify } from "@/lib/format";
@@ -10,6 +11,9 @@ import {
   setSessionCookie,
   clearSessionCookie,
   isAuthenticated,
+  loginLockedFor,
+  registerLoginFailure,
+  clearLoginFailures,
 } from "@/lib/auth";
 
 export type ActionState = { error?: string } | undefined;
@@ -18,10 +22,21 @@ export async function login(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
+  const ip =
+    headers().get("x-forwarded-for")?.split(",")[0].trim() ||
+    headers().get("x-real-ip") ||
+    "local";
+  const locked = loginLockedFor(ip);
+  if (locked) {
+    return { error: `Muitas tentativas. Tente de novo em ${locked} min.` };
+  }
   const password = String(formData.get("password") ?? "");
   if (!checkPassword(password)) {
+    registerLoginFailure(ip);
+    await new Promise((r) => setTimeout(r, 800)); // atrasa tentativas em sequência
     return { error: "Senha incorreta." };
   }
+  clearLoginFailures(ip);
   setSessionCookie();
   redirect("/admin");
 }
