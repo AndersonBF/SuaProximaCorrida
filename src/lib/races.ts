@@ -1,5 +1,6 @@
 import { Prisma, RaceStatus } from "@prisma/client";
 import { prisma } from "./prisma";
+import { keyTokens } from "./photos/match";
 
 export interface RaceFilters {
   q?: string;
@@ -66,21 +67,56 @@ export async function listRaces(filters: RaceFilters = {}) {
 type DedupeRace = {
   name: string;
   date: Date;
+  city: string;
   priceFrom: number | null;
   imageUrl: string | null;
   distances: string[];
 };
 
-const RACE_STOPWORDS = /\b(corrida|corridas|run|race|prova|etapa)\b/g;
+const compact = (s: string) =>
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-function fingerprint(r: DedupeRace): string {
-  const n = r.name
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(RACE_STOPWORDS, "")
-    .replace(/[^a-z0-9]/g, "");
-  return `${n}|${new Date(r.date).toISOString().slice(0, 10)}`;
+/** Dia da prova no fuso de Brasília (YYYY-MM-DD). */
+const brDay = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" });
+const raceDay = (d: Date) => brDay.format(new Date(d));
+
+/** Palavras do nome que identificam a prova (sem genéricas, ordinais, romanos e ano). */
+function nameTokens(name: string): string[] {
+  return keyTokens(name).filter((t) => !/^[ivx]+$/.test(t) && !/^\d+$/.test(t));
+}
+
+/**
+ * Fração das palavras de `x` (fora o nome da cidade) que aparecem em `y` —
+ * direto ou como sigla em `y` (ex: "GMA" = Guarda Municipal de Araucária).
+ */
+function coverage(x: string[], y: string[], cityTokens: Set<string>): number {
+  const relevant = x.filter((t) => !cityTokens.has(t));
+  if (relevant.length === 0) return 0;
+  const ySet = new Set(y);
+  const initials = x.map((t) => t[0]).join("");
+  const byAcronym = new Set<number>();
+  for (const a of y) {
+    if (a.length < 2 || a.length > 5 || x.includes(a)) continue;
+    const at = initials.indexOf(a);
+    if (at !== -1) for (let i = at; i < at + a.length; i++) byAcronym.add(i);
+  }
+  const covered = x.filter(
+    (t, i) => !cityTokens.has(t) && (ySet.has(t) || byAcronym.has(i))
+  ).length;
+  return covered / relevant.length;
+}
+
+/** Mesma prova vinda de fontes diferentes: mesmo dia, mesma cidade e nome parecido. */
+export function isSameRace(a: DedupeRace, b: DedupeRace): boolean {
+  if (raceDay(a.date) !== raceDay(b.date)) return false;
+  if (compact(a.city) !== compact(b.city)) return false;
+  const cityTokens = new Set(keyTokens(a.city));
+  const ta = nameTokens(a.name);
+  const tb = nameTokens(b.name);
+  const ja = ta.filter((t) => !cityTokens.has(t)).join("");
+  const jb = tb.filter((t) => !cityTokens.has(t)).join("");
+  if (ja && ja === jb) return true; // "ITA RUNNING" x "Itarunning"
+  return Math.max(coverage(ta, tb, cityTokens), coverage(tb, ta, cityTokens)) >= 0.6;
 }
 
 /**
@@ -92,13 +128,23 @@ export function dedupeRaces<T extends DedupeRace>(races: T[]): T[] {
     (r.priceFrom != null ? 2 : 0) +
     (r.imageUrl ? 1 : 0) +
     (r.distances.length > 0 ? 1 : 0);
-  const best = new Map<string, T>();
+  // agrupa por dia + cidade e, dentro do grupo, junta as que são a mesma prova
+  const groups = new Map<string, T[][]>();
+  const keep = new Set<T>();
   for (const r of races) {
-    const k = fingerprint(r);
-    const cur = best.get(k);
-    if (!cur || score(r) > score(cur)) best.set(k, r);
+    const k = `${raceDay(r.date)}|${compact(r.city)}`;
+    const clusters = groups.get(k) ?? [];
+    const cluster = clusters.find((c) => c.some((o) => isSameRace(o, r)));
+    if (cluster) cluster.push(r);
+    else clusters.push([r]);
+    groups.set(k, clusters);
   }
-  return races.filter((r) => best.get(fingerprint(r)) === r);
+  for (const clusters of Array.from(groups.values())) {
+    for (const c of clusters) {
+      keep.add(c.reduce((best, r) => (score(r) > score(best) ? r : best)));
+    }
+  }
+  return races.filter((r) => keep.has(r));
 }
 
 export async function getRaceBySlug(slug: string) {

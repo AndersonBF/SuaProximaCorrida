@@ -128,6 +128,22 @@ model Assessoria {
   @@index([status])
 }
 
+/// Uma visualização de página (analytics próprio, só o admin vê).
+/// `visitorId` é um id aleatório guardado em cookie — não identifica a pessoa.
+model PageView {
+  id         String   @id @default(cuid())
+  visitorId  String
+  path       String
+  referrer   String? // domínio de origem (ex: "google.com"), null = direto
+  device     String // "mobile" | "desktop" | "tablet"
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now()) // atualizado pelo heartbeat enquanto a aba está aberta
+
+  @@index([createdAt])
+  @@index([lastSeenAt])
+  @@index([visitorId])
+}
+
 /// Álbum de fotos de uma corrida em uma plataforma (Fotop, Fotto, Banlek...).
 /// Uma corrida pode ter vários (outros fotógrafos/plataformas).
 model RacePhoto {

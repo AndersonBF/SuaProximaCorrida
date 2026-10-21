@@ -31,6 +31,12 @@ export default function AdminLayout({
               >
                 Assessorias
               </Link>
+              <Link
+                href="/admin/acessos"
+                className="text-sm text-neutral-500 transition hover:text-neutral-200"
+              >
+                Acessos
+              </Link>
             </>
           )}
           <Link

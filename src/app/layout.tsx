@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { CursorGlow } from "@/components/CursorGlow";
+import { PageTracker } from "@/components/PageTracker";
 
 const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Sua Próxima Corrida";
 
@@ -23,6 +24,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className="overflow-x-hidden">
         <CursorGlow />
+        <PageTracker />
         <Header />
         <main className="relative z-10 min-h-[70vh] py-10">{children}</main>
         <footer className="relative z-10 border-t border-ink-800 py-8 text-sm text-neutral-500">
