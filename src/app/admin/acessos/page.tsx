@@ -1,6 +1,9 @@
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { IGNORE_COOKIE } from "@/lib/tracking";
 import { AutoRefresh } from "./AutoRefresh";
+import { toggleIgnoreDevice } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +21,21 @@ const deviceLabel: Record<string, string> = {
   tablet: "Tablet",
 };
 
+/** "agora", "há 5 min", "há 3 h", "há 2 dias". */
+function ago(d: Date): string {
+  const s = Math.max(0, Math.round((Date.now() - d.getTime()) / 1000));
+  if (s < 60) return "agora";
+  if (s < 3600) return `há ${Math.floor(s / 60)} min`;
+  if (s < 86400) return `há ${Math.floor(s / 3600)} h`;
+  const days = Math.floor(s / 86400);
+  return `há ${days} dia${days === 1 ? "" : "s"}`;
+}
+
+const hhmm = (d: Date) =>
+  new Intl.DateTimeFormat("pt-BR", {
+    timeZone: TZ, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+  }).format(d);
+
 async function uniqueVisitors(since: Date): Promise<number> {
   const [row] = await prisma.$queryRaw<{ n: number }[]>`
     SELECT COUNT(DISTINCT "visitorId")::int AS n
@@ -33,7 +51,10 @@ export default async function AdminAcessos() {
   const since7 = new Date(now - 7 * DAY_MS);
   const onlineSince = new Date(now - ONLINE_WINDOW_MS);
 
-  const [daily, visitors7, visitors30, views7, views30, onlineRows, topPages, referrers, devices] =
+  const [
+    daily, visitors7, visitors30, views7, views30, onlineRows, topPages, referrers, devices,
+    recent, cities, newVisitors30, totalViews,
+  ] =
     await Promise.all([
       prisma.$queryRaw<{ day: string; views: number; visitors: number }[]>`
         SELECT to_char(("createdAt" AT TIME ZONE 'UTC') AT TIME ZONE ${TZ}, 'YYYY-MM-DD') AS day,
@@ -70,7 +91,27 @@ export default async function AdminAcessos() {
         where: { createdAt: { gte: since30 } },
         _count: { _all: true },
       }),
+      prisma.pageView.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true, path: true, device: true, referrer: true, isNew: true,
+          city: true, region: true, createdAt: true,
+        },
+      }),
+      prisma.pageView.groupBy({
+        by: ["city", "region"],
+        where: { createdAt: { gte: since30 }, city: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { city: "desc" } },
+        take: 8,
+      }),
+      prisma.pageView.count({ where: { createdAt: { gte: since30 }, isNew: true } }),
+      prisma.pageView.count(),
     ]);
+
+  const ignoring = !!cookies().get(IGNORE_COOKIE);
+  const lastView = recent[0]?.createdAt;
 
   // série dos últimos 30 dias, preenchendo dias sem acesso com zero
   const byDay = new Map(daily.map((d) => [d.day, d]));
@@ -92,6 +133,29 @@ export default async function AdminAcessos() {
   return (
     <div className="flex flex-col gap-5">
       <AutoRefresh seconds={30} />
+
+      {/* Saúde do contador: deixa claro se está recebendo dados */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-800 bg-ink-900 px-4 py-3 text-sm">
+        <p className="flex items-center gap-2 text-neutral-300">
+          <span
+            className={`h-2 w-2 rounded-full ${
+              lastView && Date.now() - lastView.getTime() < DAY_MS
+                ? "bg-emerald-400"
+                : "bg-amber-400"
+            }`}
+          />
+          {lastView
+            ? `Contador ativo · última visita ${ago(lastView)} · ${totalViews} páginas vistas no total`
+            : "Nenhuma visita registrada ainda"}
+        </p>
+        <form action={toggleIgnoreDevice}>
+          <button className="rounded-md border border-ink-700 px-3 py-1.5 text-xs text-neutral-300 transition hover:border-accent/50 hover:text-white">
+            {ignoring
+              ? "✓ Este aparelho não é contado — contar de novo"
+              : "Não contar as minhas visitas neste aparelho"}
+          </button>
+        </form>
+      </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className={`${card} border-emerald-500/30`}>
@@ -157,9 +221,68 @@ export default async function AdminAcessos() {
         </div>
       </div>
 
+      <div className="grid gap-3 md:grid-cols-3">
+        <List
+          title="Cidades (30 dias)"
+          rows={cities.map((c) => ({
+            label: `${c.city}${c.region ? `/${c.region}` : ""}`,
+            value: c._count._all,
+          }))}
+          empty="Aparece no site publicado (o localhost não informa a cidade)."
+        />
+        <List
+          title="Novos x recorrentes (30 dias)"
+          rows={[
+            { label: "Primeira visita", value: newVisitors30 },
+            { label: "Já conheciam o site", value: Math.max(0, visitors30 - newVisitors30) },
+          ]}
+        />
+        <div className={card}>
+          <p className={cardTitle}>Como ler</p>
+          <p className="mt-3 text-xs leading-relaxed text-neutral-500">
+            <b className="text-neutral-300">Visitante</b> é um aparelho/navegador; uma
+            pessoa que volta no mesmo dia conta uma vez. <b className="text-neutral-300">Página
+            vista</b> é cada tela aberta. “Online agora” conta quem mandou sinal nos últimos
+            5 minutos com a aba aberta.
+          </p>
+        </div>
+      </div>
+
+      <div className={card}>
+        <p className={cardTitle}>Últimas visitas (ao vivo)</p>
+        <ul className="mt-3 divide-y divide-ink-800 text-sm">
+          {recent.length === 0 && (
+            <li className="py-3 text-neutral-600">Sem visitas ainda.</li>
+          )}
+          {recent.map((v) => (
+            <li
+              key={v.id}
+              className="flex flex-col gap-0.5 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+            >
+              <span className="min-w-0 truncate text-neutral-200">{v.path}</span>
+              <span className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500">
+                <span>{hhmm(v.createdAt)}</span>
+                <span>· {deviceLabel[v.device] ?? v.device}</span>
+                {v.city && <span>· {v.city}{v.region ? `/${v.region}` : ""}</span>}
+                <span>· {v.referrer ?? "direto"}</span>
+                <span
+                  className={`rounded-full border px-1.5 py-px text-[10px] ${
+                    v.isNew
+                      ? "border-emerald-500/30 text-emerald-400"
+                      : "border-ink-700 text-neutral-500"
+                  }`}
+                >
+                  {v.isNew ? "novo" : "voltou"}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
       <p className="text-xs text-neutral-600">
-        Robôs, páginas /admin e as suas próprias visitas (logado no admin) não são contados.
-        Atualiza sozinho a cada 30s.
+        Robôs, páginas /admin, as visitas de quem está logado no admin e dos aparelhos
+        marcados acima não são contados. Atualiza sozinho a cada 30s.
       </p>
     </div>
   );

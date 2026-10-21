@@ -136,6 +136,10 @@ model PageView {
   path       String
   referrer   String? // domínio de origem (ex: "google.com"), null = direto
   device     String // "mobile" | "desktop" | "tablet"
+  isNew      Boolean  @default(false) // primeira visita deste aparelho (sem cookie ainda)
+  country    String? // vindo do edge da Vercel (só em produção)
+  region     String?
+  city       String?
   createdAt  DateTime @default(now())
   lastSeenAt DateTime @default(now()) // atualizado pelo heartbeat enquanto a aba está aberta
 

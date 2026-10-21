@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { isAuthenticated } from "@/lib/auth";
+import { IGNORE_COOKIE } from "@/lib/tracking";
 
 /**
  * Coleta de acessos: /api/track
@@ -21,6 +22,24 @@ function deviceFrom(ua: string): string {
   return "desktop";
 }
 
+/** Localização aproximada (cidade) que a Vercel informa no cabeçalho; vazio no localhost. */
+function geoFrom(req: Request) {
+  const read = (name: string) => {
+    const v = req.headers.get(name);
+    if (!v) return null;
+    try {
+      return decodeURIComponent(v).slice(0, 80);
+    } catch {
+      return v.slice(0, 80);
+    }
+  };
+  return {
+    country: read("x-vercel-ip-country"),
+    region: read("x-vercel-ip-country-region"),
+    city: read("x-vercel-ip-city"),
+  };
+}
+
 /** Reduz o referrer ao domínio; descarta quando vem do próprio site. */
 function referrerHost(ref: unknown, ownHost: string | null): string | null {
   if (typeof ref !== "string" || !ref) return null;
@@ -35,7 +54,7 @@ function referrerHost(ref: unknown, ownHost: string | null): string | null {
 
 export async function POST(req: Request) {
   const ua = req.headers.get("user-agent") || "";
-  if (!ua || BOT_RE.test(ua) || isAuthenticated()) {
+  if (!ua || BOT_RE.test(ua) || isAuthenticated() || cookies().get(IGNORE_COOKIE)) {
     return new NextResponse(null, { status: 204 });
   }
 
@@ -75,6 +94,8 @@ export async function POST(req: Request) {
       path,
       referrer: referrerHost(body.referrer, req.headers.get("host")),
       device: deviceFrom(ua),
+      isNew,
+      ...geoFrom(req),
     },
     select: { id: true },
   });
