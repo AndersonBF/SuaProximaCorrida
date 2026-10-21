@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
@@ -109,6 +110,27 @@ export default async function AdminAcessos() {
       prisma.pageView.count({ where: { createdAt: { gte: since30 }, isNew: true } }),
       prisma.pageView.count(),
     ]);
+
+  // cliques no botão de inscrição por corrida (contador acumulado de /ir/[id]) x acessos à página dela
+  const [topClicked, clicksAgg] = await Promise.all([
+    prisma.race.findMany({
+      where: { clicks: { gt: 0 } },
+      orderBy: { clicks: "desc" },
+      take: 15,
+      select: { id: true, name: true, slug: true, city: true, state: true, clicks: true },
+    }),
+    prisma.race.aggregate({ _sum: { clicks: true }, where: { clicks: { gt: 0 } }, _count: { _all: true } }),
+  ]);
+  const clickViews = new Map(
+    (
+      await prisma.pageView.groupBy({
+        by: ["path"],
+        where: { path: { in: topClicked.map((r) => `/corrida/${r.slug}`) } },
+        _count: { _all: true },
+      })
+    ).map((v) => [v.path, v._count._all])
+  );
+  const totalClicks = clicksAgg._sum.clicks ?? 0;
 
   const ignoring = !!cookies().get(IGNORE_COOKIE);
   const lastView = recent[0]?.createdAt;
@@ -246,6 +268,60 @@ export default async function AdminAcessos() {
             5 minutos com a aba aberta.
           </p>
         </div>
+      </div>
+
+      <div className={card}>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className={cardTitle}>Cliques por corrida (inscrição)</p>
+          <p className="text-xs text-neutral-500">
+            {totalClicks} clique{totalClicks === 1 ? "" : "s"} em {clicksAgg._count._all} corrida
+            {clicksAgg._count._all === 1 ? "" : "s"}
+          </p>
+        </div>
+        <ul className="mt-3 divide-y divide-ink-800 text-sm">
+          {topClicked.length === 0 && (
+            <li className="py-3 text-neutral-600">Nenhum clique de inscrição ainda.</li>
+          )}
+          {topClicked.map((r) => {
+            const views = clickViews.get(`/corrida/${r.slug}`) ?? 0;
+            return (
+              <li key={r.id} className="flex items-center justify-between gap-3 py-2.5">
+                <span className="min-w-0">
+                  <Link
+                    href={`/corrida/${r.slug}`}
+                    target="_blank"
+                    className="block truncate text-neutral-200 transition hover:text-white"
+                  >
+                    {r.name}
+                  </Link>
+                  <span className="text-xs text-neutral-600">
+                    {r.city}/{r.state}
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-4 text-right text-xs text-neutral-500">
+                  <span>
+                    <b className="block text-sm font-semibold text-neutral-100">{views}</b>
+                    acessos
+                  </span>
+                  <span>
+                    <b className="block text-sm font-semibold text-accent">{r.clicks}</b>
+                    cliques
+                  </span>
+                  <span className="hidden w-14 sm:block">
+                    <b className="block text-sm font-semibold text-neutral-100">
+                      {views > 0 ? `${Math.min(100, Math.round((r.clicks / views) * 100))}%` : "—"}
+                    </b>
+                    conversão
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="mt-3 text-xs text-neutral-600">
+          Cliques são o total desde sempre; acessos só contam a partir de quando o contador entrou
+          no ar. Por isso corridas antigas podem mostrar mais cliques que acessos.
+        </p>
       </div>
 
       <div className={card}>
