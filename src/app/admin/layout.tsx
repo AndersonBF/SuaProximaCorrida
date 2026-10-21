@@ -12,9 +12,9 @@ export default function AdminLayout({
   const authed = isAuthenticated();
   return (
     <div className="container-page">
-      <div className="mb-6 flex items-center justify-between border-b border-ink-800 pb-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold tracking-tight text-neutral-100">
+      <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-ink-800 pb-4">
+        <div className="contents">
+          <h1 className="w-full text-lg font-semibold tracking-tight text-neutral-100 sm:w-auto">
             Painel Admin
           </h1>
           {authed && (
@@ -47,7 +47,7 @@ export default function AdminLayout({
           </Link>
         </div>
         {authed && (
-          <form action={logout}>
+          <form action={logout} className="ml-auto">
             <button className="text-sm text-neutral-500 transition hover:text-neutral-200">
               Sair
             </button>

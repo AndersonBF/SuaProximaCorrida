@@ -12,7 +12,7 @@ import { logoutUser } from "@/app/conta/actions";
 const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Sua Próxima Corrida";
 
 const linkCls =
-  "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm text-neutral-400 transition hover:bg-ink-800 hover:text-neutral-50";
+  "flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-1.5 sm:px-3 text-sm text-neutral-400 transition hover:bg-ink-800 hover:text-neutral-50";
 
 export async function Header() {
   const user = await getCurrentUser();
@@ -21,14 +21,14 @@ export async function Header() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-ink-800 bg-ink-950/80 backdrop-blur">
-      <div className="container-page flex h-16 items-center justify-between gap-4">
+      <div className="container-page flex h-16 items-center justify-between gap-2 sm:gap-4">
         {/* Logo */}
         <Link
           href="/"
           aria-label={siteName}
           className="shrink-0"
         >
-          <span className="whitespace-nowrap text-[17px] font-bold leading-none tracking-tight">
+          <span className="whitespace-nowrap text-[15px] font-bold sm:text-[17px] leading-none tracking-tight">
             <span className="text-neutral-50">Sua </span>
             <span className="bg-gradient-to-r from-accent to-amber-300 bg-clip-text text-transparent">
               Próxima Corrida
@@ -90,9 +90,9 @@ export async function Header() {
               </Link>
               <Link
                 href="/cadastro"
-                className="ml-1 whitespace-nowrap rounded-full bg-gradient-to-br from-accent to-amber-400 px-4 py-1.5 text-sm font-semibold text-ink-950 transition hover:opacity-90"
+                className="ml-1 whitespace-nowrap rounded-full bg-gradient-to-br from-accent to-amber-400 px-3 py-1.5 sm:px-4 text-sm font-semibold text-ink-950 transition hover:opacity-90"
               >
-                Criar conta
+                Criar<span className="hidden sm:inline"> conta</span>
               </Link>
             </>
           )}
