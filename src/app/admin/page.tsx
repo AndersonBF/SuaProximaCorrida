@@ -22,7 +22,22 @@ const statusClass: Record<string, string> = {
 export default async function AdminHome() {
   requireAuth();
 
-  const races = await prisma.race.findMany({ orderBy: { date: "asc" } });
+  const [rows, viewCounts] = await Promise.all([
+    prisma.race.findMany({ orderBy: { date: "asc" } }),
+    prisma.pageView.groupBy({
+      by: ["path"],
+      where: { path: { startsWith: "/corrida/" } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  // acessos = visitas à página da corrida; mais acessadas primeiro (desempate: cliques)
+  const viewsBySlug = new Map(
+    viewCounts.map((v) => [v.path.slice("/corrida/".length), v._count._all])
+  );
+  const races = rows
+    .map((race) => ({ ...race, views: viewsBySlug.get(race.slug) ?? 0 }))
+    .sort((a, b) => b.views - a.views || b.clicks - a.clicks);
 
   return (
     <div className="flex flex-col gap-5">
@@ -48,6 +63,7 @@ export default async function AdminHome() {
               <th className="px-4 py-3 font-medium">Local</th>
               <th className="px-4 py-3 font-medium">Preço</th>
               <th className="px-4 py-3 font-medium">Fonte</th>
+              <th className="px-4 py-3 font-medium">Acessos</th>
               <th className="px-4 py-3 font-medium">Cliques</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 text-right font-medium">Ações</th>
@@ -57,7 +73,7 @@ export default async function AdminHome() {
             {races.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className="px-4 py-10 text-center text-neutral-600"
                 >
                   Nenhuma corrida ainda. Clique em “Nova corrida”.
@@ -79,6 +95,9 @@ export default async function AdminHome() {
                   {formatPriceShort(race.priceFrom)}
                 </td>
                 <td className="px-4 py-3 text-neutral-400">{race.source}</td>
+                <td className="px-4 py-3 font-medium text-neutral-200">
+                  {race.views}
+                </td>
                 <td className="px-4 py-3 font-medium text-neutral-200">
                   {race.clicks}
                 </td>
