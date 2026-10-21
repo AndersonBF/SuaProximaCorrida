@@ -1,82 +1,96 @@
 import Link from "next/link";
-import { Bookmark, Navigation, Trophy, UserCircle, Users } from "lucide-react";
+import {
+  Bookmark,
+  LogOut,
+  Navigation,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { getCurrentUser } from "@/lib/currentUser";
 import { logoutUser } from "@/app/conta/actions";
 
 const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Sua Próxima Corrida";
 
+const linkCls =
+  "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm text-neutral-400 transition hover:bg-ink-800 hover:text-neutral-50";
+
 export async function Header() {
   const user = await getCurrentUser();
   const firstName = user?.name?.split(" ")[0] ?? user?.email?.split("@")[0];
+  const initial = (firstName ?? "?").charAt(0).toUpperCase();
 
   return (
     <header className="sticky top-0 z-20 border-b border-ink-800 bg-ink-950/80 backdrop-blur">
-      <div className="container-page flex h-16 items-center justify-between">
+      <div className="container-page flex h-16 items-center justify-between gap-4">
         {/* Logo */}
-        <Link href="/" className="text-[18px] font-bold tracking-tight">
-          <span className="text-neutral-50">Sua </span>
-          <span className="bg-gradient-to-r from-accent to-amber-300 bg-clip-text text-transparent">
-            Próxima Corrida
+        <Link
+          href="/"
+          aria-label={siteName}
+          className="shrink-0"
+        >
+          <span className="whitespace-nowrap text-[17px] font-bold leading-none tracking-tight">
+            <span className="text-neutral-50">Sua </span>
+            <span className="bg-gradient-to-r from-accent to-amber-300 bg-clip-text text-transparent">
+              Próxima Corrida
+            </span>
           </span>
         </Link>
 
         {/* Navegação + auth */}
-        <nav className="flex items-center gap-5 text-sm text-neutral-400">
-          <Link href="/" className="hidden transition hover:text-neutral-100 sm:inline">
+        <nav className="flex items-center gap-1">
+          <Link href="/" className={`${linkCls} hidden sm:flex`}>
             Corridas
           </Link>
-          <Link
-            href="/resultados"
-            className="flex items-center gap-1.5 transition hover:text-neutral-100"
-          >
-            <Trophy size={14} />
+          <Link href="/resultados" className={linkCls}>
+            <Trophy size={15} />
             <span className="hidden sm:inline">Resultados</span>
           </Link>
-          <Link
-            href="/assessorias"
-            className="hidden items-center gap-1.5 transition hover:text-neutral-100 sm:flex"
-          >
-            <Users size={14} />
+          <Link href="/assessorias" className={`${linkCls} hidden md:flex`}>
+            <Users size={15} />
             Assessorias
           </Link>
-          <Link
-            href="/perto"
-            className="flex items-center gap-1.5 transition hover:text-neutral-100"
-          >
-            <Navigation size={14} />
-            <span className="hidden sm:inline">Perto de mim</span>
+          <Link href="/perto" className={linkCls}>
+            <Navigation size={15} />
+            <span className="hidden lg:inline">Perto de mim</span>
           </Link>
+
+          <span className="mx-2 hidden h-6 w-px bg-ink-700 sm:block" />
 
           {user ? (
             <>
-              <Link
-                href="/minhas-corridas"
-                className="flex items-center gap-1.5 transition hover:text-neutral-100"
-              >
+              <Link href="/minhas-corridas" className={linkCls}>
                 <Bookmark size={15} />
-                <span className="hidden sm:inline">Minhas corridas</span>
+                <span className="hidden lg:inline">Minhas corridas</span>
               </Link>
               <Link
                 href="/conta"
-                className="flex items-center gap-1.5 text-neutral-500 transition hover:text-neutral-100"
+                className="ml-1 flex items-center gap-2 rounded-full border border-ink-700 bg-ink-900 py-1 pl-1 pr-3 text-sm text-neutral-200 transition hover:border-accent/50"
               >
-                <UserCircle size={15} />
-                <span className="hidden md:inline">
-                  Olá, <span className="text-neutral-200">{firstName}</span>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-accent to-amber-400 text-xs font-bold text-ink-950">
+                  {initial}
+                </span>
+                <span className="hidden max-w-[90px] truncate md:inline">
+                  {firstName}
                 </span>
               </Link>
               <form action={logoutUser}>
-                <button className="transition hover:text-neutral-100">Sair</button>
+                <button
+                  aria-label="Sair"
+                  title="Sair"
+                  className="ml-1 flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition hover:bg-ink-800 hover:text-neutral-50"
+                >
+                  <LogOut size={15} />
+                </button>
               </form>
             </>
           ) : (
             <>
-              <Link href="/entrar" className="transition hover:text-neutral-100">
+              <Link href="/entrar" className={linkCls}>
                 Entrar
               </Link>
               <Link
                 href="/cadastro"
-                className="rounded-lg bg-gradient-to-br from-accent to-amber-400 px-3.5 py-1.5 font-medium text-ink-950 transition hover:opacity-90"
+                className="ml-1 whitespace-nowrap rounded-full bg-gradient-to-br from-accent to-amber-400 px-4 py-1.5 text-sm font-semibold text-ink-950 transition hover:opacity-90"
               >
                 Criar conta
               </Link>
