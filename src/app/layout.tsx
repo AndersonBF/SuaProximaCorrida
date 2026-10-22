@@ -7,6 +7,15 @@ import { PageTracker } from "@/components/PageTracker";
 const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Sua Próxima Corrida";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  ),
+  openGraph: {
+    type: "website",
+    siteName,
+    locale: "pt_BR",
+  },
+  twitter: { card: "summary_large_image" },
   title: {
     default: `${siteName} — Encontre corridas de rua perto de você`,
     template: `%s · ${siteName}`,
