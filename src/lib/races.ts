@@ -1,6 +1,7 @@
 import { Prisma, RaceStatus } from "@prisma/client";
 import { prisma } from "./prisma";
 import { keyTokens } from "./photos/match";
+import { raceType } from "./raceMeta";
 
 export interface RaceFilters {
   q?: string;
@@ -150,12 +151,15 @@ export function dedupeRaces<T extends DedupeRace>(races: T[]): T[] {
 export async function getRaceBySlug(slug: string) {
   return prisma.race.findUnique({
     where: { slug },
-    include: { photos: { orderBy: { createdAt: "asc" } } },
+    include: {
+      photos: { orderBy: { createdAt: "asc" } },
+      lots: true,
+    },
   });
 }
 
 export async function getRaceById(id: string) {
-  return prisma.race.findUnique({ where: { id } });
+  return prisma.race.findUnique({ where: { id }, include: { lots: true } });
 }
 
 /** Valores únicos para popular os filtros (cidades, distâncias, estados). */
@@ -182,4 +186,49 @@ export async function getFilterOptions(state?: string) {
     states: Array.from(states).sort(),
     distances: Array.from(distances).sort(),
   };
+}
+
+/**
+ * Corridas para segurar o visitante na página: outras da mesma cidade e
+ * parecidas (mesmo estado, mesmo tipo/distância). Só futuras e publicadas.
+ */
+export async function getRelatedRaces(
+  race: { id: string; name: string; city: string; state: string; distances: string[] },
+  limit = 3
+) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const rows = dedupeRaces(
+    await prisma.race.findMany({
+      where: {
+        status: RaceStatus.PUBLISHED,
+        id: { not: race.id },
+        state: race.state,
+        date: { gte: today },
+      },
+      orderBy: { date: "asc" },
+      take: 120,
+    })
+  );
+
+  const sameCity = rows
+    .filter((r) => compact(r.city) === compact(race.city))
+    .slice(0, limit);
+  const used = new Set(sameCity.map((r) => r.id));
+
+  const type = raceType(race.name, race.distances).label;
+  const similar = rows
+    .filter((r) => !used.has(r.id))
+    .map((r) => ({
+      r,
+      score:
+        (raceType(r.name, r.distances).label === type ? 2 : 0) +
+        (r.distances.some((d) => race.distances.includes(d)) ? 1 : 0),
+    }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || a.r.date.getTime() - b.r.date.getTime())
+    .slice(0, limit)
+    .map((x) => x.r);
+
+  return { sameCity, similar };
 }

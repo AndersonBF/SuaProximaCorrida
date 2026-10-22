@@ -14,11 +14,11 @@ enum RaceStatus {
 }
 
 model User {
-  id           String      @id @default(cuid())
-  email        String      @unique
+  id           String               @id @default(cuid())
+  email        String               @unique
   name         String?
   passwordHash String
-  createdAt    DateTime    @default(now())
+  createdAt    DateTime             @default(now())
   saved        SavedRace[]
   resetTokens  PasswordResetToken[]
 }
@@ -36,10 +36,10 @@ model SavedRace {
 }
 
 model Race {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   // Identificação
   name        String
-  slug        String   @unique
+  slug        String  @unique
   description String?
   imageUrl    String?
 
@@ -63,22 +63,32 @@ model Race {
 
   // Origem e link
   registrationUrl String // link de inscrição no site original
-  source          String  @default("Manual") // ex: "Ticket Sports", "Sympla", "Manual"
+  source          String    @default("Manual") // ex: "Ticket Sports", "Sympla", "Manual"
   sourceUrl       String? // página de origem (de onde veio o dado)
   externalId      String? // id da corrida no site de origem (para dedupe no scraping)
   resultsUrl      String? // link dos resultados oficiais (corridas já realizadas)
   photosUrl       String? // álbum de fotos da corrida (ex: Fotop)
   photosCheckedAt DateTime? // última busca automática de fotos
 
+  // Detalhes extras da página da corrida
+  surface        String? // ASFALTO | TRAIL | PISTA | MISTO
+  level          String? // INICIANTE | INTERMEDIARIO | AVANCADO
+  kitInfo        String? // o que vem no kit e onde/quando retirar
+  routeUrl       String? // percurso: link do mapa ou do arquivo GPX
+  elevationGain  Int? // altimetria: ganho de elevação total (m)
+  lastVerifiedAt DateTime? // última vez que os dados foram conferidos (admin ou scraper)
+
   // Controle
   status   RaceStatus @default(PUBLISHED)
   featured Boolean    @default(false)
 
-  clicks Int @default(0) // cliques no botão de inscrição (saída para o site oficial)
+  clicks     Int @default(0) // cliques no botão de inscrição (saída para o site oficial)
   savesCount Int @default(0) // quantos usuários salvaram (denormalizado)
 
   savedBy SavedRace[]
   photos  RacePhoto[]
+  lots    RaceLot[]
+  reports RaceReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -161,4 +171,31 @@ model RacePhoto {
 
   @@unique([raceId, url])
   @@index([raceId])
+}
+
+/// Lote de inscrição de uma distância (preço e data em que o lote vira).
+model RaceLot {
+  id       String    @id @default(cuid())
+  raceId   String
+  distance String? // ex: "10km"; null = vale para todas as distâncias
+  name     String // ex: "1º lote"
+  price    Float
+  endsAt   DateTime? // último dia do lote; null = até acabar as vagas
+  race     Race      @relation(fields: [raceId], references: [id], onDelete: Cascade)
+
+  @@index([raceId])
+}
+
+/// Aviso de erro enviado por visitantes na página da corrida.
+model RaceReport {
+  id        String   @id @default(cuid())
+  raceId    String
+  message   String
+  contact   String? // e-mail/WhatsApp opcional para retorno
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  race      Race     @relation(fields: [raceId], references: [id], onDelete: Cascade)
+
+  @@index([raceId])
+  @@index([resolved])
 }

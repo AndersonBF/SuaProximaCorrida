@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useFormState, useFormStatus } from "react-dom";
-import type { Race } from "@prisma/client";
+import type { Race, RaceLot } from "@prisma/client";
+import { SURFACES, LEVELS, lotsToText } from "@/lib/raceDetails";
 import type { ActionState } from "@/app/admin/actions";
 
 type Action = (prev: ActionState, formData: FormData) => Promise<ActionState>;
@@ -32,7 +33,7 @@ export function RaceForm({
   race,
 }: {
   action: Action;
-  race?: Race;
+  race?: Race & { lots?: RaceLot[] };
 }) {
   const [state, formAction] = useFormState(action, undefined);
   const editing = !!race;
@@ -220,6 +221,92 @@ export function RaceForm({
             className="h-4 w-4 rounded border-ink-700 bg-ink-900 text-accent focus:ring-accent"
           />
           Destacar na home
+        </label>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 rounded-xl border border-ink-800 bg-ink-900 p-5 sm:grid-cols-2">
+        <h3 className="text-sm font-semibold text-neutral-200 sm:col-span-2">
+          Detalhes da prova (opcional)
+        </h3>
+
+        <label className={labelClass}>
+          Tipo de piso
+          <select
+            name="surface"
+            defaultValue={race?.surface ?? ""}
+            className={inputClass}
+          >
+            <option value="">Não informado</option>
+            {Object.entries(SURFACES).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className={labelClass}>
+          Nível
+          <select
+            name="level"
+            defaultValue={race?.level ?? ""}
+            className={inputClass}
+          >
+            <option value="">Não informado</option>
+            {Object.entries(LEVELS).map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className={labelClass}>
+          Ganho de elevação (m)
+          <input
+            name="elevationGain"
+            inputMode="numeric"
+            defaultValue={race?.elevationGain ?? ""}
+            className={inputClass}
+            placeholder="120"
+          />
+        </label>
+
+        <label className={labelClass}>
+          Percurso (link do mapa ou GPX)
+          <input
+            type="url"
+            name="routeUrl"
+            defaultValue={race?.routeUrl ?? ""}
+            className={inputClass}
+            placeholder="https://..."
+          />
+        </label>
+
+        <label className={`${labelClass} sm:col-span-2`}>
+          Kit e retirada
+          <textarea
+            name="kitInfo"
+            rows={3}
+            defaultValue={race?.kitInfo ?? ""}
+            className={inputClass}
+            placeholder="Camiseta, número de peito, medalha... Retirada dia 10/11 no Shopping X, das 10h às 20h."
+          />
+        </label>
+
+        <label className={`${labelClass} sm:col-span-2`}>
+          Lotes e preços (um por linha)
+          <textarea
+            name="lots"
+            rows={4}
+            defaultValue={race?.lots ? lotsToText(race.lots) : ""}
+            className={`${inputClass} font-mono text-xs`}
+            placeholder={"5km | 1º lote | 79,90 | 2026-10-31\n5km | 2º lote | 99,90 | 2026-11-15\n10km | 1º lote | 89,90 | 2026-10-31"}
+          />
+          <span className="text-xs font-normal text-neutral-500">
+            Formato: distância | nome do lote | preço | último dia (AAAA-MM-DD).
+            Distância e data podem ficar vazias.
+          </span>
         </label>
       </section>
 

@@ -108,6 +108,7 @@ export async function upsertScrapedRace(defaultSource: string, r: ScrapedRace) {
     source,
     sourceUrl: r.sourceUrl ?? null,
     externalId: r.externalId,
+    lastVerifiedAt: new Date(),
     ...(r.resultsUrl ? { resultsUrl: r.resultsUrl } : {}),
   };
 

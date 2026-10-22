@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { raceSchema } from "@/lib/validators";
 import { slugify } from "@/lib/format";
+import { parseLots } from "@/lib/raceDetails";
 import {
   checkPassword,
   setSessionCookie,
@@ -77,6 +78,13 @@ function toData(input: ReturnType<typeof raceSchema.parse>) {
     priceFrom: input.priceFrom ?? null,
     priceTo: input.priceTo ?? null,
     organizer: input.organizer ?? null,
+    surface: input.surface ?? null,
+    level: input.level ?? null,
+    kitInfo: input.kitInfo ?? null,
+    routeUrl: input.routeUrl ?? null,
+    elevationGain:
+      input.elevationGain !== undefined ? Math.round(input.elevationGain) : null,
+    lastVerifiedAt: new Date(),
     registrationUrl: input.registrationUrl,
     source: input.source || "Manual",
     sourceUrl: input.sourceUrl ?? null,
@@ -96,7 +104,10 @@ export async function createRace(
   }
   const data = toData(parsed.data);
   const slug = await uniqueSlug(data.name);
-  await prisma.race.create({ data: { ...data, slug } });
+  const lots = parseLots(parsed.data.lots ?? "");
+  await prisma.race.create({
+    data: { ...data, slug, lots: { create: lots } },
+  });
   revalidatePath("/");
   revalidatePath("/admin");
   redirect("/admin");
@@ -114,7 +125,15 @@ export async function updateRace(
   }
   const data = toData(parsed.data);
   const slug = await uniqueSlug(data.name, id);
-  await prisma.race.update({ where: { id }, data: { ...data, slug } });
+  const lots = parseLots(parsed.data.lots ?? "");
+  await prisma.$transaction([
+    prisma.raceLot.deleteMany({ where: { raceId: id } }),
+    prisma.race.update({
+      where: { id },
+      data: { ...data, slug, lots: { create: lots } },
+    }),
+  ]);
+  revalidatePath(`/corrida/${slug}`);
   revalidatePath("/");
   revalidatePath("/admin");
   redirect("/admin");

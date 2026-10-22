@@ -36,6 +36,18 @@ export const raceSchema = z.object({
   priceFrom: optionalNumber,
   priceTo: optionalNumber,
   organizer: optionalString,
+  surface: z
+    .enum(["ASFALTO", "TRAIL", "PISTA", "MISTO"])
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  level: z
+    .enum(["INICIANTE", "INTERMEDIARIO", "AVANCADO"])
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  kitInfo: optionalString,
+  routeUrl: optionalString,
+  elevationGain: optionalNumber,
+  lots: z.string().optional(),
   registrationUrl: z.string().trim().url("Link de inscrição inválido"),
   source: z.string().trim().default("Manual"),
   sourceUrl: optionalString,

@@ -37,6 +37,12 @@ export default function AdminLayout({
               >
                 Acessos
               </Link>
+              <Link
+                href="/admin/relatos"
+                className="text-sm text-neutral-500 transition hover:text-neutral-200"
+              >
+                Avisos de erro
+              </Link>
             </>
           )}
           <Link
