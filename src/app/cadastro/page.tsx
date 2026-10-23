@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useFormState, useFormStatus } from "react-dom";
 import { signup } from "../conta/actions";
+import { GoogleButton } from "@/components/GoogleButton";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -29,7 +30,11 @@ export default function CadastroPage() {
           Crie sua conta para acompanhar as corridas.
         </p>
 
-        <form action={formAction} className="mt-6 flex flex-col gap-4">
+        <div className="mt-6 flex flex-col gap-4">
+          <GoogleButton />
+        </div>
+
+        <form action={formAction} className="mt-4 flex flex-col gap-4">
           <label className="flex flex-col gap-1.5 text-sm font-medium text-neutral-300">
             Nome
             <input name="name" required className="field" placeholder="Seu nome" />

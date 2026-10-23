@@ -59,7 +59,10 @@ export async function loginUser(_prev: AuthState, formData: FormData): Promise<A
   const { email, password } = parsed.data;
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !verifyPassword(password, user.passwordHash)) {
+  if (user && !user.passwordHash) {
+    return { error: "Esta conta usa o login com Google. Use o botão \"Continuar com Google\"." };
+  }
+  if (!user?.passwordHash || !verifyPassword(password, user.passwordHash)) {
     return { error: "E-mail ou senha incorretos." };
   }
   setUserSession(user.id);
@@ -192,7 +195,12 @@ export async function changePassword(
   if (password !== confirm) return { error: "As senhas não conferem." };
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || !verifyPassword(current, user.passwordHash)) {
+  if (user && !user.passwordHash) {
+    return {
+      error: "Sua conta usa o login com Google. Para criar uma senha, use \"Esqueci minha senha\".",
+    };
+  }
+  if (!user?.passwordHash || !verifyPassword(current, user.passwordHash)) {
     return { error: "A senha atual está incorreta." };
   }
 

@@ -17,7 +17,8 @@ model User {
   id           String               @id @default(cuid())
   email        String               @unique
   name         String?
-  passwordHash String
+  passwordHash String? // vazio para quem entra só com o Google
+  googleId     String?              @unique
   createdAt    DateTime             @default(now())
   saved        SavedRace[]
   resetTokens  PasswordResetToken[]

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useFormState, useFormStatus } from "react-dom";
 import { loginUser } from "../conta/actions";
+import { GoogleButton } from "@/components/GoogleButton";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -16,7 +17,11 @@ function SubmitButton() {
   );
 }
 
-export default function EntrarPage() {
+export default function EntrarPage({
+  searchParams,
+}: {
+  searchParams?: { erro?: string };
+}) {
   const [state, formAction] = useFormState(loginUser, undefined);
 
   return (
@@ -29,7 +34,16 @@ export default function EntrarPage() {
           Bem-vindo de volta! Acesse sua conta.
         </p>
 
-        <form action={formAction} className="mt-6 flex flex-col gap-4">
+        <div className="mt-6 flex flex-col gap-4">
+          <GoogleButton />
+          {searchParams?.erro === "google" && (
+            <p className="text-sm text-red-400">
+              Não foi possível entrar com o Google. Tente de novo.
+            </p>
+          )}
+        </div>
+
+        <form action={formAction} className="mt-4 flex flex-col gap-4">
           <label className="flex flex-col gap-1.5 text-sm font-medium text-neutral-300">
             E-mail
             <input type="email" name="email" required className="field" placeholder="voce@email.com" />
