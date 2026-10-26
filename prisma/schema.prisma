@@ -200,3 +200,55 @@ model RaceReport {
   @@index([raceId])
   @@index([resolved])
 }
+
+enum TreinoKind {
+  SEMANAL // treino que se repete toda semana (dias + horário)
+  PONTUAL // treino ou "treinão" em uma data específica
+}
+
+/// Treino coletivo de corrida (NÃO é uma corrida/prova). Pode ser semanal
+/// (assessorias e grupos) ou pontual (treinão com data), vindo de scraping ou
+/// de cadastro.
+model Treino {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  kind        TreinoKind @default(SEMANAL)
+  description String?
+  imageUrl    String?
+
+  // Quando
+  weekdays     Int[] // 0 = domingo ... 6 = sábado (treino semanal)
+  startTime    String? // "06:30"
+  endTime      String? // "08:00"
+  date         DateTime? // treino pontual
+  scheduleText String? // trecho original encontrado na página (para conferência)
+
+  // Onde
+  state    String
+  city     String
+  location String? // parque, praça, pista...
+
+  // Quem
+  organizer String? // assessoria / grupo
+  free      Boolean @default(false)
+  priceInfo String? // ex: "Grátis", "R$ 150/mês", "Aula experimental grátis"
+  instagram String?
+  whatsapp  String?
+  website   String?
+
+  // Origem
+  source         String // ex: "Site da assessoria", "Sympla"
+  sourceUrl      String?
+  externalId     String
+  lastVerifiedAt DateTime?
+
+  status    RaceStatus @default(PUBLISHED)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([source, externalId])
+  @@index([state, city])
+  @@index([kind])
+  @@index([status])
+}

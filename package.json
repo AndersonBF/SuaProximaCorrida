@@ -13,6 +13,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "scrape": "tsx scripts/scrape.ts && tsx scripts/geocode.ts && tsx scripts/photos.ts",
+    "scrape:treinos": "tsx scripts/scrape-treinos.ts",
     "photos": "tsx scripts/photos.ts",
     "geocode": "tsx scripts/geocode.ts",
     "email:test": "tsx scripts/email-test.ts",
