@@ -27,9 +27,9 @@ export function raceType(name: string, distances: string[]): RaceType {
     return { label: "Ultra", cls: "border-red-500/40 text-red-400" };
   if (km >= 42) return { label: "Maratona", cls: "border-accent/50 text-accent" };
   if (km >= 21) return { label: "Meia", cls: "border-amber-400/40 text-amber-300" };
-  if (km >= 10) return { label: "10K", cls: "border-ink-700 text-neutral-300" };
-  if (km > 0) return { label: "5K", cls: "border-ink-700 text-neutral-300" };
-  return { label: "Corrida", cls: "border-ink-700 text-neutral-400" };
+  if (km >= 10) return { label: "10K", cls: "border-white/30 text-white/85" };
+  if (km > 0) return { label: "5K", cls: "border-white/30 text-white/85" };
+  return { label: "Corrida", cls: "border-white/30 text-white/70" };
 }
 
 /** Dias até a corrida (a partir de hoje, 0 = hoje). */

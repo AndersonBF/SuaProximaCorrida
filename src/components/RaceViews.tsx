@@ -20,7 +20,7 @@ const AllPinsMap = dynamic(() => import("./AllPinsMap"), {
 type View = "lista" | "mapa" | "calendario" | "mes";
 
 const OPTIONS: [View, string, typeof List][] = [
-  ["lista", "Lista", List],
+  ["lista", "Cards", List],
   ["calendario", "Calendário", CalendarDays],
   ["mes", "Por mês", CalendarRange],
   ["mapa", "Mapa", MapIcon],
@@ -54,15 +54,15 @@ export function RaceViews({
           {count}
           {summary ? ` · ${summary}` : ""}
         </p>
-        <div className="flex items-center gap-1 rounded-lg border border-ink-800 bg-ink-900/60 p-1">
+        <div className="flex items-center gap-1 rounded-full border border-ink-800 p-1">
           {OPTIONS.map(([v, label, Icon]) => (
             <button
               key={v}
               onClick={() => setView(v)}
               title={label}
-              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition ${
                 view === v
-                  ? "bg-ink-800 text-neutral-100"
+                  ? "bg-neutral-100 text-ink-950"
                   : "text-neutral-500 hover:text-neutral-300"
               }`}
             >
@@ -86,7 +86,7 @@ export function RaceViews({
       ) : view === "mes" ? (
         <CalendarView items={items} loggedIn={loggedIn} savedSet={savedSet} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {items.map(({ race, d }) => (
             <RaceCard
               key={race.id}

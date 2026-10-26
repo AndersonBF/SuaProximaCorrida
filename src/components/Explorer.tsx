@@ -124,9 +124,9 @@ export function Explorer({
   const tab = (m: Mode, label: string, Icon: typeof Search) => (
     <button
       onClick={() => setMode(m)}
-      className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition ${
+      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
         mode === m
-          ? "bg-ink-800 text-neutral-100"
+          ? "bg-neutral-100 text-ink-950"
           : "text-neutral-500 hover:text-neutral-300"
       }`}
     >
@@ -138,7 +138,7 @@ export function Explorer({
   return (
     <section className="flex flex-col gap-5">
       {/* Abas */}
-      <div className="flex items-center gap-1 rounded-xl border border-ink-800 bg-ink-900/60 p-1 w-fit">
+      <div className="flex items-center gap-1 rounded-full border border-ink-800 p-1 w-fit">
         {tab("filtros", "Filtros", SlidersHorizontal)}
         {tab("perto", "Perto de mim", Navigation)}
       </div>
@@ -147,15 +147,15 @@ export function Explorer({
       {mode === "filtros" ? (
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+            <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
             <input
-              className="field pl-9"
+              className="field field-pill pl-10"
               placeholder="Buscar corrida ou cidade"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
-          <select className="field" value={city} onChange={(e) => setCity(e.target.value)}>
+          <select className="field field-pill" value={city} onChange={(e) => setCity(e.target.value)}>
             <option value="">Todas as cidades</option>
             {cities.map((c) => (
               <option key={c} value={c}>
@@ -163,7 +163,7 @@ export function Explorer({
               </option>
             ))}
           </select>
-          <select className="field" value={dist} onChange={(e) => setDist(e.target.value)}>
+          <select className="field field-pill" value={dist} onChange={(e) => setDist(e.target.value)}>
             <option value="">Qualquer distância</option>
             {distances.map((d) => (
               <option key={d} value={d}>
@@ -177,15 +177,15 @@ export function Explorer({
           <div className="flex flex-col justify-center gap-3">
             <form onSubmit={searchCity} className="flex gap-2">
               <div className="relative flex-1">
-                <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                <MapPin size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
                 <input
-                  className="field pl-9"
+                  className="field field-pill pl-10"
                   placeholder="Sua cidade (ex: Cascavel)"
                   value={cityInput}
                   onChange={(e) => setCityInput(e.target.value)}
                 />
               </div>
-              <button className="rounded-lg bg-accent px-4 text-sm font-medium text-ink-950 transition hover:bg-accent-soft">
+              <button className="rounded-full bg-neutral-100 px-6 text-sm font-medium text-ink-950 transition hover:-translate-y-0.5">
                 Ir
               </button>
             </form>
@@ -193,7 +193,7 @@ export function Explorer({
               <button
                 onClick={useMyLocation}
                 disabled={locating}
-                className="inline-flex items-center gap-2 rounded-lg border border-ink-700 px-3 py-2 text-sm text-neutral-300 transition hover:border-accent/50 hover:text-white disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-full border border-ink-700 px-4 py-2.5 text-sm text-neutral-300 transition hover:border-accent/50 hover:text-neutral-50 disabled:opacity-60"
               >
                 {locating ? <Loader2 size={15} className="animate-spin" /> : <Navigation size={15} />}
                 Minha localização
@@ -201,7 +201,7 @@ export function Explorer({
               <select
                 value={radius}
                 onChange={(e) => setRadius(Number(e.target.value))}
-                className="field max-w-[170px]"
+                className="field field-pill max-w-[190px]"
               >
                 {RADII.map((r) => (
                   <option key={r} value={r}>

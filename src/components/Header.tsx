@@ -28,7 +28,7 @@ export async function Header() {
           aria-label={siteName}
           className="shrink-0"
         >
-          <span className="whitespace-nowrap text-[15px] font-bold sm:text-[17px] leading-none tracking-tight">
+          <span className="whitespace-nowrap text-[15px] font-medium sm:text-[17px] leading-none tracking-tight">
             <span className="text-neutral-50">Sua </span>
             <span className="bg-gradient-to-r from-accent to-amber-300 bg-clip-text text-transparent">
               Próxima Corrida
@@ -90,7 +90,7 @@ export async function Header() {
               </Link>
               <Link
                 href="/cadastro"
-                className="ml-1 whitespace-nowrap rounded-full bg-gradient-to-br from-accent to-amber-400 px-3 py-1.5 sm:px-4 text-sm font-semibold text-ink-950 transition hover:opacity-90"
+                className="ml-1 whitespace-nowrap rounded-full bg-white px-4 py-2 text-sm font-medium text-[#16161a] transition hover:-translate-y-0.5 sm:px-5"
               >
                 Criar<span className="hidden sm:inline"> conta</span>
               </Link>

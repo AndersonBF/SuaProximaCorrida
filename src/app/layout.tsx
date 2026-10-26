@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { CursorGlow } from "@/components/CursorGlow";
 import { PageTracker } from "@/components/PageTracker";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Sua Próxima Corrida";
 
@@ -30,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={outfit.variable}>
       <body className="overflow-x-hidden">
         <CursorGlow />
         <PageTracker />

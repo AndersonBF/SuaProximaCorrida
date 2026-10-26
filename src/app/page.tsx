@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Explorer } from "@/components/Explorer";
 import { listRaces, getFilterOptions } from "@/lib/races";
 import { getCurrentUser, getSavedRaceIds } from "@/lib/currentUser";
@@ -15,36 +16,53 @@ export default async function HomePage() {
   ]);
 
   return (
-    <div className="container-page flex flex-col gap-10">
-      <section className="relative flex flex-col items-center gap-4 pt-6 text-center sm:pt-10">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[-90px] h-72 w-[120%] max-w-3xl -translate-x-1/2 blur-2xl"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(249,115,22,0.18), rgba(249,115,22,0.03) 45%, transparent 70%)",
-          }}
-        />
-        <h1 className="relative max-w-3xl text-4xl font-semibold leading-[1.1] tracking-tight text-neutral-50 sm:text-5xl">
-          Todas as corridas do Paraná.
-          <br />
-          <span className="bg-gradient-to-r from-accent to-amber-300 bg-clip-text text-transparent">
-            Em um só lugar.
-          </span>
-        </h1>
-        <p className="relative max-w-xl text-sm leading-relaxed text-neutral-400 sm:text-base">
-          Filtre por cidade e distância, ou encontre as corridas mais próximas
-          de você. Inscreva-se direto no site oficial.
-        </p>
+    // -my-10 anula o py-10 do <main> para o hero encostar no header e a faixa clara no rodapé
+    <div className="-my-10">
+      <section className="hero-bg relative isolate overflow-hidden">
+        <div className="container-page flex flex-col items-center px-4 pb-24 pt-16 text-center sm:pb-28 sm:pt-24">
+          <h1 className="max-w-[14ch] text-balance text-5xl font-medium leading-[1.02] tracking-[-0.04em] text-neutral-50 sm:text-7xl lg:text-8xl">
+            Encontre sua próxima corrida.
+          </h1>
+          <p className="mt-6 max-w-[46ch] text-base font-light leading-relaxed text-neutral-300 sm:text-lg">
+            Todas as corridas do Paraná em um só lugar. Filtre por cidade e
+            distância, ou encontre as mais próximas de você e se inscreva
+            direto no site oficial.
+          </p>
+          <div className="mt-9 flex flex-wrap justify-center gap-3">
+            <a
+              href="#corridas"
+              className="rounded-full bg-white px-8 py-4 text-base font-medium text-[#16161a] transition hover:-translate-y-0.5"
+            >
+              Ver corridas
+            </a>
+            <Link
+              href="/perto"
+              className="rounded-full border border-white/20 bg-white/10 px-8 py-4 text-base font-medium text-neutral-50 backdrop-blur transition hover:bg-white/15"
+            >
+              Perto de mim
+            </Link>
+          </div>
+        </div>
       </section>
 
-      <Explorer
-        races={races}
-        loggedIn={!!user}
-        savedIds={Array.from(savedIds)}
-        cities={options.cities}
-        distances={options.distances}
-      />
+      {/* faixa grafite que sobe sobre o hero */}
+      <section
+        id="corridas"
+        className="graphite relative -mt-10 scroll-mt-20 rounded-t-[36px] pb-20 pt-10"
+      >
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <h2 className="mb-6 text-2xl font-medium tracking-tight text-neutral-100 sm:text-3xl">
+            Próximas corridas
+          </h2>
+          <Explorer
+            races={races}
+            loggedIn={!!user}
+            savedIds={Array.from(savedIds)}
+            cities={options.cities}
+            distances={options.distances}
+          />
+        </div>
+      </section>
     </div>
   );
 }

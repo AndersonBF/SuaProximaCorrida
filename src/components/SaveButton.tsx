@@ -35,7 +35,7 @@ export function SaveButton({ raceId, initialSaved, loggedIn, variant = "icon", i
       <Link
         href="/entrar"
         title="Entre para salvar"
-        className="grid h-8 w-8 place-items-center rounded-lg border border-ink-700 bg-ink-950/70 text-neutral-300 backdrop-blur transition hover:border-accent/50 hover:text-white"
+        className="grid h-8 w-8 place-items-center rounded-full border border-ink-700 bg-ink-950/70 text-neutral-300 backdrop-blur transition hover:border-accent/50 hover:text-neutral-50"
       >
         <Bookmark size={15} />
       </Link>
@@ -80,10 +80,10 @@ export function SaveButton({ raceId, initialSaved, loggedIn, variant = "icon", i
       disabled={pending}
       title={saved ? "Remover dos salvos" : "Salvar corrida"}
       aria-pressed={saved}
-      className={`grid h-8 w-8 place-items-center rounded-lg border backdrop-blur transition disabled:opacity-60 ${
+      className={`grid h-8 w-8 place-items-center rounded-full border backdrop-blur transition disabled:opacity-60 ${
         saved
           ? "border-accent/50 bg-accent/20 text-accent"
-          : "border-ink-700 bg-ink-950/70 text-neutral-300 hover:border-accent/50 hover:text-white"
+          : "border-ink-700 bg-ink-950/70 text-neutral-300 hover:border-accent/50 hover:text-neutral-50"
       }`}
     >
       <Bookmark size={15} fill={saved ? "currentColor" : "none"} />
