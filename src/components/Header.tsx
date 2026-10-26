@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   Bookmark,
+  Footprints,
   LogOut,
   Navigation,
   Trophy,
@@ -40,6 +41,10 @@ export async function Header() {
         <nav className="flex items-center gap-1">
           <Link href="/" className={`${linkCls} hidden sm:flex`}>
             Corridas
+          </Link>
+          <Link href="/treinos" className={linkCls} aria-label="Treinos">
+            <Footprints size={15} />
+            <span className="hidden sm:inline">Treinos</span>
           </Link>
           <Link href="/resultados" className={linkCls}>
             <Trophy size={15} />

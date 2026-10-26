@@ -61,6 +61,24 @@ export default async function HomePage() {
             cities={options.cities}
             distances={options.distances}
           />
+
+          <Link
+            href="/treinos"
+            className="mt-12 flex flex-col items-start justify-between gap-4 rounded-[24px] border border-ink-800 bg-ink-900 p-6 transition hover:border-accent/50 sm:flex-row sm:items-center sm:p-8"
+          >
+            <div>
+              <h2 className="text-xl font-medium tracking-tight text-neutral-100 sm:text-2xl">
+                Quer treinar antes da prova?
+              </h2>
+              <p className="mt-1 max-w-[52ch] text-sm font-light text-neutral-400">
+                Veja os treinos coletivos de assessorias e grupos: dias,
+                horários e onde acontecem. Treino não é corrida.
+              </p>
+            </div>
+            <span className="whitespace-nowrap rounded-full bg-neutral-100 px-6 py-3 text-sm font-medium text-ink-950">
+              Ver treinos
+            </span>
+          </Link>
         </div>
       </section>
     </div>
