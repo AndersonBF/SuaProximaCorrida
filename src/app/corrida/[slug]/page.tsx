@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -26,23 +27,56 @@ import { ReportError } from "@/components/ReportError";
 import { getCurrentUser, getSavedRaceIds } from "@/lib/currentUser";
 import { SaveButton } from "@/components/SaveButton";
 import { AssessoriaCard } from "@/components/AssessoriaCard";
+import { RaceMapSection } from "@/components/RaceMapSection";
 import { searchLinks } from "@/lib/photos";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateLong, formatPriceRange } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+).replace(/\/$/, "");
+
 export async function generateMetadata({
   params,
 }: {
   params: { slug: string };
-}) {
+}): Promise<Metadata> {
   const race = await getRaceBySlug(params.slug);
   if (!race) return { title: "Corrida não encontrada" };
+
+  const when = formatDate(race.date);
+  const where = `${race.city}/${race.state}`;
+  const base = race.description?.replace(/\s+/g, " ").trim();
+  const description = (
+    base
+      ? `${when} em ${where}. ${base}`
+      : `${race.name} — ${when} em ${where}.${
+          race.distances.length ? ` Distâncias: ${race.distances.join(", ")}.` : ""
+        } Veja preço, local e inscrição.`
+  ).slice(0, 200);
+  const url = `/corrida/${race.slug}`;
+  const images = race.imageUrl ? [{ url: race.imageUrl, alt: race.name }] : undefined;
+
   return {
     title: race.name,
-    description:
-      race.description ?? `${race.name} em ${race.city} - ${race.state}.`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      title: race.name,
+      description,
+      locale: "pt_BR",
+      images,
+    },
+    twitter: {
+      card: images ? "summary_large_image" : "summary",
+      title: race.name,
+      description,
+      images: race.imageUrl ? [race.imageUrl] : undefined,
+    },
   };
 }
 
@@ -113,14 +147,74 @@ export default async function RaceDetailPage({
       : []),
   ];
 
-  const siteUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-  ).replace(/\/$/, "");
+  const siteUrl = SITE_URL;
   const shareText = `${race.name} — ${formatDate(race.date)} em ${race.city}/${race.state}. ${siteUrl}/corrida/${race.slug}`;
   const verifiedAt = race.lastVerifiedAt ?? race.createdAt;
 
+  const hasMap = race.latitude != null && race.longitude != null;
+  const mapPlace = race.location
+    ? `${race.location}, ${race.city} - ${race.state}`
+    : `${race.city} - ${race.state}`;
+
+  // dados estruturados: o Google mostra a corrida com data e local nos resultados
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    name: race.name,
+    url: `${siteUrl}/corrida/${race.slug}`,
+    startDate: race.date.toISOString(),
+    ...(race.endDate ? { endDate: race.endDate.toISOString() } : {}),
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    ...(race.description ? { description: race.description.slice(0, 500) } : {}),
+    ...(race.imageUrl ? { image: [race.imageUrl] } : {}),
+    sport: "Running",
+    location: {
+      "@type": "Place",
+      name: race.location || race.city,
+      address: {
+        "@type": "PostalAddress",
+        ...(race.location ? { streetAddress: race.location } : {}),
+        addressLocality: race.city,
+        addressRegion: race.state,
+        addressCountry: "BR",
+      },
+      ...(hasMap
+        ? {
+            geo: {
+              "@type": "GeoCoordinates",
+              latitude: race.latitude,
+              longitude: race.longitude,
+            },
+          }
+        : {}),
+    },
+    ...(race.organizer
+      ? { organizer: { "@type": "Organization", name: race.organizer } }
+      : {}),
+    ...(race.priceFrom != null
+      ? {
+          offers: {
+            "@type": "Offer",
+            url: race.registrationUrl,
+            price: race.priceFrom,
+            priceCurrency: "BRL",
+            availability: isPast
+              ? "https://schema.org/SoldOut"
+              : "https://schema.org/InStock",
+          },
+        }
+      : {}),
+  };
+
   return (
     <div className="container-page flex flex-col gap-7">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <Link
         href="/"
         className="inline-flex w-fit items-center gap-2 text-sm text-neutral-500 transition hover:text-neutral-200"
@@ -293,6 +387,15 @@ export default async function RaceDetailPage({
           </div>
           <RaceLots lots={race.lots} />
         </section>
+      )}
+
+      {hasMap && (
+        <RaceMapSection
+          lat={race.latitude!}
+          lng={race.longitude!}
+          place={mapPlace}
+          exact={!!race.location}
+        />
       )}
 
       {(race.kitInfo || race.routeUrl) && (

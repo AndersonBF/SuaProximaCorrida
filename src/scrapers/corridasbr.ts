@@ -225,12 +225,30 @@ async function priceFrom(
   return price;
 }
 
+const UFS = new Set(
+  "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ")
+);
+
+/**
+ * A listagem do corridasbr é por UF, mas cidades homônimas (ex.: Cascavel/CE
+ * aparece na lista do PR) vêm com o estado errado. Procura "Cidade/UF" ou
+ * "Cidade, UF" na página de inscrição; devolve a UF só se for explícita e válida.
+ */
+function detectUF(html: string, city: string): string | undefined {
+  const esc = city.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`${esc}\\s*(?:/|,|-|–|—)\\s*([A-Z]{2})\\b`, "g");
+  const found = new Set<string>();
+  for (const m of html.matchAll(re)) if (UFS.has(m[1])) found.add(m[1]);
+  return found.size === 1 ? [...found][0] : undefined;
+}
+
 /** Baixa a página de inscrição e extrai imagem + preço. Usa headless como
  *  fallback (sites JS) quando algo faltar. */
 async function fetchRegistrationMeta(
   url: string,
-  eventName: string
-): Promise<{ imageUrl?: string; priceFrom?: number; priceTo?: number }> {
+  eventName: string,
+  city?: string
+): Promise<{ imageUrl?: string; priceFrom?: number; priceTo?: number; state?: string }> {
   try {
     const res = await fetch(url, {
       headers: { "user-agent": UA, accept: "text/html" },
@@ -255,7 +273,7 @@ async function fetchRegistrationMeta(
       }
     }
 
-    return { imageUrl, ...price };
+    return { imageUrl, ...price, state: city ? detectUF(html, city) : undefined };
   } catch {
     return {};
   }
@@ -342,14 +360,15 @@ async function fetchDetail(
   // só busca imagem/preço quando há link real de inscrição; o fallback do
   // corridasbr não tem cartaz nem valores.
   const meta = linkRaw
-    ? await fetchRegistrationMeta(registrationUrl, row.name)
+    ? await fetchRegistrationMeta(registrationUrl, row.name, row.city)
     : {};
 
   return {
     externalId: row.id,
     name: row.name,
     date,
-    state: base.split("/").pop()?.toUpperCase() || "PR",
+    // a UF da página de inscrição vence a da listagem (cidades homônimas)
+    state: meta.state ?? (base.split("/").pop()?.toUpperCase() || "PR"),
     city: row.city,
     location: field(html, "Largada"),
     distances: distances.length ? distances : parseDistances(row.distances),

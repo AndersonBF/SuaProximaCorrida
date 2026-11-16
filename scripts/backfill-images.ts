@@ -11,7 +11,9 @@ const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const JUNK = /logo|sprite|icone?\b|\.svg(\?|$)|avatar|placeholder|favicon|veniaClosed/i;
+// logos, ícones, banners de propaganda e imagens genéricas do site (não são o cartaz da corrida)
+const JUNK =
+  /logo|sprite|icone?\b|\.svg(\?|$)|avatar|placeholder|favicon|veniaClosed|LargeRectangle|\/banners\/|fav\.png|cronometro|og-image|thumb\.jpg|hero-banner|default|sem-?imagem/i;
 
 function metaImage(html: string): string | undefined {
   let twitter: string | undefined;
@@ -68,12 +70,15 @@ async function main() {
 
   let ok = 0;
   for (const r of todo) {
-    const urls = [r.registrationUrl, r.sourceUrl].filter((u): u is string => !!u);
+    // só a página de inscrição: a página de origem (agregador) traz banner de propaganda
+    const urls = [r.registrationUrl].filter((u): u is string => !!u);
     let img: string | undefined;
     for (const u of [...new Set(urls)]) {
       img = await imageFromPage(u);
       if (img) break;
     }
+    // a mesma imagem em várias corridas = imagem genérica do site, não do evento
+    if (img && (await prisma.race.count({ where: { imageUrl: img } })) >= 2) img = undefined;
     if (img) {
       await prisma.race.update({ where: { id: r.id }, data: { imageUrl: img } });
       ok++;

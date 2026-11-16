@@ -94,7 +94,8 @@ export async function upsertScrapedRace(defaultSource: string, r: ScrapedRace) {
   const data = {
     name: r.name,
     description: r.description ?? null,
-    imageUrl: r.imageUrl ?? null,
+    // não apaga uma imagem já preenchida quando a fonte não traz nenhuma
+    ...(r.imageUrl ? { imageUrl: r.imageUrl } : {}),
     date: r.date,
     endDate: r.endDate ?? null,
     state: r.state,
@@ -113,7 +114,12 @@ export async function upsertScrapedRace(defaultSource: string, r: ScrapedRace) {
   };
 
   if (existing) {
-    await prisma.race.update({ where: { id: existing.id }, data });
+    // mudou de estado/cidade: as coordenadas antigas ficam erradas; o geocode refaz
+    const moved = existing.state !== r.state || existing.city !== r.city;
+    await prisma.race.update({
+      where: { id: existing.id },
+      data: moved ? { ...data, latitude: null, longitude: null } : data,
+    });
     return "updated" as const;
   }
 
