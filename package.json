@@ -15,6 +15,7 @@
     "scrape": "tsx scripts/scrape.ts && tsx scripts/geocode.ts && tsx scripts/photos.ts",
     "scrape:treinos": "tsx scripts/scrape-treinos.ts",
     "photos": "tsx scripts/photos.ts",
+    "images": "tsx scripts/backfill-images.ts",
     "geocode": "tsx scripts/geocode.ts",
     "email:test": "tsx scripts/email-test.ts",
     "postinstall": "prisma generate"
